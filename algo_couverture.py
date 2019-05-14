@@ -14,6 +14,9 @@ import numpy as np;
 import pandas as pd;
 import itertools as it;
 import networkx as nx;
+import clique_max as clique;
+import fonctions_auxiliaires as fct_aux;
+
 
 ###############################################################################
 #               graphes doubles -> DEBUT
@@ -108,6 +111,127 @@ def selected_node(sommets_k_alpha, critere0=0, critere3=3):
 ###############################################################################
 
 ###############################################################################
+#              Partitionner un sommet et son voisinage en cliques -> DEBUT
+###############################################################################
+def build_matrice_of_subgraph(sommet, sommets_k_alpha):
+    """
+    construire une matrice du sous-graphe d'un sommet et de son voisinage.
+    """
+
+    voisins = set(sommets_k_alpha[sommet].voisins);
+        
+    noeuds_subgraph = voisins.copy()
+    noeuds_subgraph.add(sommet);
+    mat_subgraph = pd.DataFrame(columns=noeuds_subgraph, index=noeuds_subgraph);
+    
+    for noeud in voisins:
+        voisins_noeud = set(sommets_k_alpha[noeud].voisins)
+        noeuds_int = noeuds_subgraph.intersection(voisins_noeud);
+        for noeud_int in noeuds_int:
+            mat_subgraph.loc[noeud, noeud_int] = 1;
+            mat_subgraph.loc[noeud_int, noeud] = 1;
+            
+    return mat_subgraph.fillna(0).astype(int);
+    pass
+
+def partitionner(sommet,
+                 sommets_k_alpha,
+                 aretes_LG_k_alpha,
+                 DBG
+                 ):
+    """
+    retourner la liste des cliques couvrant un sommet et son voisinage.
+    """
+    sommet = set(sommets_k_alpha[sommet].voisins);
+    
+    mat_subgraph = build_matrice_of_subgraph(sommet=sommet, 
+                                             sommets_k_alpha=sommets_k_alpha)
+    voisins = set(sommets_k_alpha[sommet].voisins);
+    voisins.add(sommet)
+    cliques = clique.find_clique(mat_subgraph, 
+                                 voisins, 
+                                 [])
+    cliques = [set(c) for c in cliques if sommet in c];
+    return cliques
+    pass
+###############################################################################
+#              Partitionner un sommet et son voisinage en cliques -> FIN
+###############################################################################
+
+###############################################################################
+#               verifier la coherence des cliques -> DEBUT
+###############################################################################
+def verify_cliques(cliques, nom_sommet):
+    """
+    verifier si les cliques sont coherentes cad les sommets sont une extremite commune.
+    Si non chercher les cliques coherentes.
+    cliques_coh = cliques coherentes
+    """
+#    res = []; 
+    cliques_coh_tmp = []
+    f=lambda x: set(x.split("_"))
+    for cliq in cliques:
+        aretes = []
+        aretes = list(map(f, cliq))
+        sommet_commun = None;
+        sommet_commun = set.intersection(*aretes);
+        if sommet_commun != None and len(sommet_commun) == 1:
+            cliques_coh_tmp.append(cliq)
+        else:
+            if len(cliq) == 3:
+                sub_set = list(it.combinations(cliq,2));
+                sub_set = [set(s) for s in sub_set if nom_sommet in s]
+                cliques_coh_tmp.extend(sub_set);
+                
+        pass # for cliques
+    
+    bool_clique, bool_coherent, cliques_coh = False, False, []
+
+    if len(cliques_coh_tmp) == 1:
+        cliques_coh = cliques_coh_tmp.copy()
+        bool_clique, bool_coherent = True, True;
+    elif len(cliques_coh_tmp) > 1:
+        while len(cliques_coh_tmp) != 0:
+            cliq = cliques_coh_tmp.pop();
+            bool_ = True;
+            for cliq_coh_tmp in cliques_coh_tmp:
+                if len(cliq.intersection(cliq_coh_tmp)) > 1:
+                    bool_ = False;
+            if bool_:
+                cliques_coh.append(cliq)
+            pass #  while len(cliques_coh_tmp)
+
+        if len(cliques_coh) == 1:
+            bool_clique, bool_coherent = True, True;
+        elif len(cliques_coh) == 2:
+            bool_clique, bool_coherent = True, True;
+        
+    return bool_clique, bool_coherent, cliques_coh;
+    pass
+###############################################################################
+#               verifier la coherence des cliques -> FIN
+###############################################################################
+
+###############################################################################
+#               supprimer les aretes des cliques C1, C2 et 
+#                   mettre a jour l etat des sommets -> DEBUT
+###############################################################################
+def update_edges_neighbor(C1, C2, aretes, sommets):
+    """
+    supprimer les aretes des cliques C1, C2 dans la mat_LG et 
+    mettre a jour le voisinage de chaque sommet.
+    
+    aretes = ce sont les aretes de mat_LG_k_alpha cad aretes_LG_k_alpha
+    sommets = dictionnaire de classe sommet cad sommets_k_alpha
+    """
+    
+    pass
+###############################################################################
+#               supprimer les aretes des cliques et 
+#                   mettre a jour l etat des sommets -> FIN
+###############################################################################
+
+###############################################################################
 #               cover algorithm -> DEBUT
 ###############################################################################
 def clique_covers(mat_LG_k_alpha, 
@@ -130,21 +254,76 @@ def clique_covers(mat_LG_k_alpha,
             if sommet == None:
                 return cliques_couvertures, sommets_k_alpha;
             
-            bool_clique, bool_coherent, C1, C2 = partitionner(
-                                                    sommet,
-                                                    sommets_k_alpha,
-                                                    aretes_LG_k_alpha,
-                                                    DBG
-                                                    )
+            cliques = partitionner(
+                                sommet,
+                                sommets_k_alpha,
+                                aretes_LG_k_alpha,
+                                DBG
+                                )
             
+            cliques_coh = []
+            bool_clique, bool_coherent, cliques_coh = \
+                                verify_cliques(
+                                    cliques = cliques,
+                                    nom_sommet = sommet.nom)
+            C1, C2 = set(), set(); 
+            if len(cliques_coh) == 1:
+                C1 = cliques_coh[0];
+            elif len(cliques_coh) == 2:
+                C1, C2 = cliques_coh[0], cliques_coh[1];
+                
+                
             if not bool_clique and not bool_coherent:
                 sommet.etat = -1;
+                sommet.cliques_S_1 = sommet.cliques_S_1 + len(cliques_coh);
             else:
                 if sommet.etat == 3 and len(C2) != 0:
                     sommet.etat = -1;
-                    sommet.cliques_S_1 = sommet.cliques_S_1 + 2; # TODO PROBLEME remplacer 2 par le nombre de cliques trouves
+                    sommet.cliques_S_1 = sommet.cliques_S_1 + 2; 
+                
+                for voisin_som in sommet.voisins:
+                    if len(C1.union(C2).union(sommets_k_alpha[voisin_som]) - \
+                        C1.union(C2)) != 0:
+                        if sommets_k_alpha[voisin_som].etat == 3:
+                            sommets_k_alpha[voisin_som].etat = -1;
+                        elif sommets_k_alpha[voisin_som].etat == 0:
+                            sommets_k_alpha[voisin_som].etat = 3;
+                    else:
+                        if sommets_k_alpha[voisin_som].etat == 3:
+                            sommets_k_alpha[voisin_som].etat = 2;
+                        elif sommets_k_alpha[voisin_som].etat == 0:
+                            sommets_k_alpha[voisin_som].etat = 1;
+                    sommets_k_alpha[voisin_som].cliques_S_1 += 1;
+                    pass # pass for voisin_som
+                
+                # mise a jour de l etat du sommet.
+                if sommet.etat == 0:
+                    if len(C2) == 0:
+                        sommet.etat = 1;
+                        sommet.cliques_S_1 = sommet.cliques_S_1 + 1; 
+                    else:
+                        sommet.etat = 2;
+                        sommet.cliques_S_1 = sommet.cliques_S_1 + 2; 
+                else:
+                    sommet.etat = 2;
+                    sommet.cliques_S_1 = sommet.cliques_S_1 + 1; 
                     
-            pass # pass while 
+                # suppression aretes des cliques  et mise a jour du voisinage des sommets
+                aretes_LG_k_alpha, sommets_k_alpha = update_edges_neighbor(
+                                                    C1 = C1,
+                                                    C2 = C2,
+                                                    aretes = aretes_LG_k_alpha,
+                                                    sommets = sommets_k_alpha)
+                
+                for C in [C1,C2]:
+                    if C :
+                        cliques_couvertures.add(frozenset(C))
+            pass # pass while
+            
+        print("cliques : {}, aretes = {}".format(len(cliques_couvertures), 
+                                                  len(aretes_LG_k_alpha)))
+        
+        return cliques_couvertures, aretes_LG_k_alpha, sommets_k_alpha;
     pass
 ###############################################################################
 #               cover algorithm -> FIN
