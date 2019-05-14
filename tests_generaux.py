@@ -189,8 +189,9 @@ def test_is_state_selected_node(graphes_GR_LG):
     dico_df = dict(); 
     nbre_etats_3 = 3; nbre_etats_0 = 3;
     etats_possibles = [0,2,3]
+    print("TEST is_state ET selected_node => debut")
     for graphe_GR_LG in graphes_GR_LG:
-        print("TEST is_state ET selected_node")
+        
         mat_LG = graphe_GR_LG[1];
         prob = graphe_GR_LG[5];
         etat = random.choice(etats_possibles);
@@ -242,7 +243,58 @@ def test_is_state_selected_node(graphes_GR_LG):
                 "is_som_etat_modif":is_som_etat_modif
                 }
         pass # for
+    print("TEST is_state ET selected_node => FIN")
     return pd.DataFrame.from_dict(dico_df).T;
+
+def test_build_matrice_of_subgraph(graphes_GR_LG):
+    dico = dict();
+    print("TEST build_matrice_of_subgraph => debut")
+    for graphe_GR_LG in graphes_GR_LG:
+        mat_LG = graphe_GR_LG[1];
+        prob = graphe_GR_LG[5];
+        num_graph = graphe_GR_LG[8]+"_p_"+str(prob);
+        sommets = creat_gr.sommets_mat_LG(mat_LG, etat=0);
+        
+        id_nom_som, nom_sommet_alea = random.choice(list(
+                                            enumerate(sommets.keys())))
+        mat_subgraph = algo_couv.build_matrice_of_subgraph(
+                            sommet=nom_sommet_alea,
+                            sommets_k_alpha=sommets)
+        
+        aretes_LG = fct_aux.aretes(mat_GR=mat_LG,
+                                       orientation=False,
+                                       val_0_1=1)
+        aretes_subgraph = fct_aux.aretes(mat_GR=mat_subgraph,
+                                       orientation=False,
+                                       val_0_1=1)
+        aretes_int = aretes_LG.intersection(aretes_subgraph);
+        res=""
+        if aretes_int == aretes_subgraph:
+            res = "OK"
+        else:
+            res = "NOK"
+        dico[num_graph]={"res":res}
+    print("TEST build_matrice_of_subgraph => FIN")
+    return pd.DataFrame.from_dict(dico).T;
+
+def test_verify_cliques():
+    sommet = "3_5"
+    cliques = [{'1_5', '2_5', '3_5', '4_5'}, {'3_4', '3_5', '4_5'}];
+    cliques_coh = [];
+    bool_clique, bool_coherent, cliques_coh = algo_couv.verify_cliques(
+                                                cliques = cliques,
+                                                nom_sommet = sommet)
+    print("bool_clique={} \n bool_coherent={} \n cliques_coh={}".format(
+            bool_clique, bool_coherent, cliques_coh))
+    
+    cliques = [{'1_5', '2_5', '3_5', '4_5'}, {'3_4', '3_5', '4_5'}, 
+               {'3_5','3_4','3_6'}];
+    cliques_coh = [];
+    bool_clique, bool_coherent, cliques_coh = algo_couv.verify_cliques(
+                                                cliques = cliques,
+                                                nom_sommet = sommet)
+    print("bool_clique={} \n bool_coherent={} \n cliques_coh={}".format(
+            bool_clique, bool_coherent, cliques_coh))
 
 def test_execute_algos(graphes_GR_LG) :
     for graphe_GR_LG in graphes_GR_LG:
@@ -293,5 +345,9 @@ if __name__ == '__main__':
     df_DH = test_calculate_hamming_distance(graphes_GR_LG)
     
     df_is_state_select_node = test_is_state_selected_node(graphes_GR_LG);
+    
+    df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
+    
+    test_verify_cliques();
     #test_execute_algos(graphes_GR_LG)
     print("runtime : {}".format( time.time() - start))
