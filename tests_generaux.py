@@ -358,14 +358,61 @@ def test_update_edges_neighbor(graphes_GR_LG):
         print("TEST update_edge, num_graph={}, res={}".format(num_graph,res));
     return pd.DataFrame.from_dict(dico_df).T;
     
+def test_algo_covers(graphes_GR_LG) :  
+    f=lambda x: set(x.split("_"))
+    
+    dico_df = dict()
+    for graphe_GR_LG in graphes_GR_LG:
+        prob = graphe_GR_LG[5];
+        num_graph = graphe_GR_LG[8]+"_p_"+str(prob);
+        
+        mat_LG = graphe_GR_LG[1];
+        aretes_LG = fct_aux.aretes(mat_LG); 
+        sommets_LG = creat_gr.sommets_mat_LG(mat_LG)
+        start = time.time()
+        cliqs_couverts, aretes, sommets = \
+                       algo_couv.clique_covers(mat_LG, aretes_LG, 
+                                               sommets_LG,True);
+        runtime = round(time.time() - start, 2);
+        
+        som_trouves=[]
+        for cliq in cliqs_couverts:
+            aretes = list(map(f, cliq))
+            sommet_commun = None;
+            sommet_commun = set.intersection(*aretes);
+            if sommet_commun != None and len(sommet_commun) == 1:
+                som_trouves.append(sommet_commun.pop())
+        
+        mat_GR = graphe_GR_LG[0]
+        som_GR = set(mat_GR.columns)
+        som_absents = som_GR.union(som_trouves) - set(som_trouves)
+              
+        res = ""
+        if som_GR == set(som_trouves):
+            res = 'OK'
+        else:
+            res = 'NOK'
+        
+        print("TEST cliques_cover num_graphe={} runtime={}, ==>res={}".format(
+                num_graph,runtime,res))
+        
+        dico_df[num_graph] = {"res":res,
+                           "nbre_som_GR":len(som_GR),
+                           "nbre_som_trouves":len(som_trouves),
+                           "som_absents":som_absents,
+                           "aretes_res":aretes,
+                           "runtime":runtime
+               }
+        
+    return pd.DataFrame.from_dict(dico_df).T;
+
 def test_execute_algos(graphes_GR_LG) :
     for graphe_GR_LG in graphes_GR_LG:
-        gr_disco_simi.execute_algos(*graphe_GR_LG);
-    
+        gr_disco_simi.execute_algos(*graphe_GR_LG);    
 if __name__ == '__main__':
     start = time.time();
     
-    nbre_sommets_GR = 6;
+    nbre_sommets_GR = 6#10;
     nbre_moyen_liens = (2,5);
     chemin_matrice = "tests/matrices/";
     nbre_graphe = 10;
@@ -412,5 +459,6 @@ if __name__ == '__main__':
     
     test_verify_cliques();
     test_update_edges_neighbor(graphes_GR_LG);
+    df_cliq_covers = test_algo_covers(graphes_GR_LG)
     #test_execute_algos(graphes_GR_LG)
     print("runtime : {}".format( time.time() - start))
