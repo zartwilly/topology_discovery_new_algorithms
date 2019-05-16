@@ -60,3 +60,18 @@ def voisins(aretes, noeud):
             if aretes.loc[sommet_adjacent_possible, noeud] == 1 :
                 liste_voisins.append(sommet_adjacent_possible);
     return liste_voisins
+
+def convert_sommet_to_df(sommets_k_alpha):
+    """
+    convertir le dictionnaire contenant des objets de type Noeud en un
+    DataFrame.
+    """
+    som_cols = list(sommets_k_alpha.keys())
+    df = pd.DataFrame(columns = som_cols, index = som_cols);
+    for nom_sommet, sommet in sommets_k_alpha.items():
+        for voisin in sommet.voisins:
+            df.loc[nom_sommet, voisin] = 1;
+            df.loc[voisin, nom_sommet] = 1;
+     
+    df.fillna(0, inplace=True);
+    return df.astype(int);
