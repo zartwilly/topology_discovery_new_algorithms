@@ -167,9 +167,10 @@ def verify_cliques(cliques, nom_sommet):
     Si non chercher les cliques coherentes.
     cliques_coh = cliques coherentes
     """
-#    res = []; 
-    cliques_coh_tmp = []
     f=lambda x: set(x.split("_"))
+    
+    cliques_coh, cliques_coh_tmp = [],[];
+    cliques_a_frag = []
     for cliq in cliques:
         aretes = []
         aretes = list(map(f, cliq))
@@ -178,33 +179,37 @@ def verify_cliques(cliques, nom_sommet):
         if sommet_commun != None and len(sommet_commun) == 1:
             cliques_coh_tmp.append(cliq)
         else:
-            if len(cliq) == 3:
-                sub_set = list(it.combinations(cliq,2));
-                sub_set = [set(s) for s in sub_set if nom_sommet in s]
-                cliques_coh_tmp.extend(sub_set);
-                
-        pass # for cliques
+            cliques_a_frag.append(cliq)
     
+#    print("cliques_coh_tmp={}, cliques_a_frag={}".format(cliques_coh_tmp, 
+#                                              cliques_a_frag))
+    
+    for cliq_a_frag in cliques_a_frag:
+        if len(cliq_a_frag) == 3:
+            sub_sets = list(it.combinations(cliq_a_frag,2));
+            sub_sets = [set(s) for s in sub_sets if nom_sommet in s]
+#            print("cliq_a_frag={},sub_sets={}".format(cliq_a_frag, sub_sets))
+            
+            for sub_set in sub_sets:
+                bool_subset = True;
+                for cliq_coh_tmp in cliques_coh_tmp:
+                    if sub_set.issubset(cliq_coh_tmp) or \
+                        cliq_coh_tmp.issubset(sub_set) :
+                        bool_subset = False;
+#                print("***{} subset of one of {}? {}".format(sub_set,cliques_coh_tmp, bool_subset))
+                if bool_subset:
+                    cliques_coh_tmp.append(sub_set);
+            
     bool_clique, bool_coherent, cliques_coh = False, False, []
 
     if len(cliques_coh_tmp) == 1:
         cliques_coh = cliques_coh_tmp.copy()
         bool_clique, bool_coherent = True, True;
-    elif len(cliques_coh_tmp) > 1:
-        while len(cliques_coh_tmp) != 0:
-            cliq = cliques_coh_tmp.pop();
-            bool_ = True;
-            for cliq_coh_tmp in cliques_coh_tmp:
-                if len(cliq.intersection(cliq_coh_tmp)) > 1:
-                    bool_ = False;
-            if bool_:
-                cliques_coh.append(cliq)
-            pass #  while len(cliques_coh_tmp)
-
-        if len(cliques_coh) == 1:
-            bool_clique, bool_coherent = True, True;
-        elif len(cliques_coh) == 2:
-            bool_clique, bool_coherent = True, True;
+    elif len(cliques_coh_tmp) == 2:
+        bool_clique, bool_coherent = True, True;
+        cliques_coh = cliques_coh_tmp.copy();
+    else:
+        cliques_coh = cliques_coh_tmp.copy();
         
     return bool_clique, bool_coherent, cliques_coh;
     pass
