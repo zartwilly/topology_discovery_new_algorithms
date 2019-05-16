@@ -271,13 +271,13 @@ def clique_covers(mat_LG_k_alpha,
                                    critere3=3)
             
             if sommet == None:
-                return cliques_couvertures, sommets_k_alpha;
+                return cliques_couvertures, aretes_LG_k_alpha,sommets_k_alpha;
             
             cliques = partitionner(
-                                sommet,
-                                sommets_k_alpha,
-                                aretes_LG_k_alpha,
-                                DBG
+                                sommet = sommet,
+                                sommets_k_alpha = sommets_k_alpha,
+                                aretes_LG_k_alpha = aretes_LG_k_alpha,
+                                DBG = DBG
                                 )
             
             cliques_coh = []
@@ -301,7 +301,8 @@ def clique_covers(mat_LG_k_alpha,
                     sommet.cliques_S_1 = sommet.cliques_S_1 + 2; 
                 
                 for voisin_som in sommet.voisins:
-                    if len(C1.union(C2).union(sommets_k_alpha[voisin_som]) - \
+                    if len(C1.union(C2).union(
+                            sommets_k_alpha[voisin_som].voisins) - \
                         C1.union(C2)) != 0:
                         if sommets_k_alpha[voisin_som].etat == 3:
                             sommets_k_alpha[voisin_som].etat = -1;
