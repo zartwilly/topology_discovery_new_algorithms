@@ -258,7 +258,7 @@ def test_build_matrice_of_subgraph(graphes_GR_LG):
         id_nom_som, nom_sommet_alea = random.choice(list(
                                             enumerate(sommets.keys())))
         mat_subgraph = algo_couv.build_matrice_of_subgraph(
-                            sommet=nom_sommet_alea,
+                            nom_sommet=nom_sommet_alea,
                             sommets_k_alpha=sommets)
         
         aretes_LG = fct_aux.aretes(mat_GR=mat_LG,
@@ -296,6 +296,68 @@ def test_verify_cliques():
     print("bool_clique={} \n bool_coherent={} \n cliques_coh={}".format(
             bool_clique, bool_coherent, cliques_coh))
 
+def test_update_edges_neighbor(graphes_GR_LG):
+    dico_df = dict();
+    for graphe_GR_LG in graphes_GR_LG:
+        mat_LG = graphe_GR_LG[1];
+        prob = graphe_GR_LG[5];
+        num_graph = graphe_GR_LG[8]+"_p_"+str(prob);
+        sommets = creat_gr.sommets_mat_LG(mat_LG, etat=0);
+        
+        id_nom_som, nom_sommet_alea = random.choice(list(
+                                            enumerate(sommets.keys())))
+        aretes_LG = fct_aux.aretes(mat_GR=mat_LG,
+                                   orientation=False,
+                                   val_0_1=1)
+#        print("TEST update_edge num_graph={}".format(num_graph));
+        cliques = algo_couv.partitionner(
+                                sommet = sommets[nom_sommet_alea],
+                                sommets_k_alpha = sommets,
+                                aretes_LG_k_alpha = aretes_LG,
+                                DBG= True
+                                )
+        cliques_coh = []
+        bool_clique, bool_coherent, cliques_coh = \
+                            algo_couv.verify_cliques(
+                                        cliques = cliques,
+                                        nom_sommet = nom_sommet_alea)                    
+        C1, C2 = set(), set(); 
+        if len(cliques_coh) == 1:
+            C1 = cliques_coh[0];
+        elif len(cliques_coh) == 2:
+            C1, C2 = cliques_coh[0], cliques_coh[1];
+        aretes_LG_res, sommets = algo_couv.update_edges_neighbor(
+                                                    C1 = C1,
+                                                    C2 = C2,
+                                                    aretes = aretes_LG,
+                                                    sommets = sommets)
+        aretes_supps_res = aretes_LG.union(aretes_LG_res) - aretes_LG_res;
+        
+        # transform sommets to dataframe puis calculer aretes_restantes et 
+        # comparer aretes_restantes avec aretes_LG
+        aretes_supps_cal = set();
+        mat_res = fct_aux.convert_sommet_to_df(sommets_k_alpha=sommets);
+        aretes_restantes = fct_aux.aretes(mat_GR=mat_res,
+                                   orientation=False,
+                                   val_0_1=1)
+        aretes_supps_cal = aretes_LG.union(aretes_restantes) - aretes_restantes;
+        res = ""
+        if aretes_supps_cal == aretes_supps_res:
+            res = 'OK';
+        else:
+            res = 'NOK';
+        
+        dico_df[num_graph] = {"nom_sommet":nom_sommet_alea,
+               "voisins":set(sommets[nom_sommet_alea].voisins),
+               "cliques":cliques,
+               "cliques_coh":cliques_coh,
+               "aretes_supps_res": aretes_supps_res,
+               "aretes_supps_cal": aretes_supps_cal,
+               "res":res
+               }
+        print("TEST update_edge, num_graph={}, res={}".format(num_graph,res));
+    return pd.DataFrame.from_dict(dico_df).T;
+    
 def test_execute_algos(graphes_GR_LG) :
     for graphe_GR_LG in graphes_GR_LG:
         gr_disco_simi.execute_algos(*graphe_GR_LG);
@@ -349,5 +411,6 @@ if __name__ == '__main__':
     df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
     
     test_verify_cliques();
+    test_update_edges_neighbor(graphes_GR_LG);
     #test_execute_algos(graphes_GR_LG)
     print("runtime : {}".format( time.time() - start))
