@@ -113,15 +113,15 @@ def selected_node(sommets_k_alpha, critere0=0, critere3=3):
 ###############################################################################
 #              Partitionner un sommet et son voisinage en cliques -> DEBUT
 ###############################################################################
-def build_matrice_of_subgraph(sommet, sommets_k_alpha):
+def build_matrice_of_subgraph(nom_sommet, sommets_k_alpha):
     """
     construire une matrice du sous-graphe d'un sommet et de son voisinage.
     """
 
-    voisins = set(sommets_k_alpha[sommet].voisins);
+    voisins = set(sommets_k_alpha[nom_sommet].voisins);
         
     noeuds_subgraph = voisins.copy()
-    noeuds_subgraph.add(sommet);
+    noeuds_subgraph.add(nom_sommet);
     mat_subgraph = pd.DataFrame(columns=noeuds_subgraph, index=noeuds_subgraph);
     
     for noeud in voisins:
@@ -142,16 +142,16 @@ def partitionner(sommet,
     """
     retourner la liste des cliques couvrant un sommet et son voisinage.
     """
-    sommet = set(sommets_k_alpha[sommet].voisins);
+    #sommet = set(sommets_k_alpha[sommet].voisins);
     
-    mat_subgraph = build_matrice_of_subgraph(sommet=sommet, 
+    mat_subgraph = build_matrice_of_subgraph(nom_sommet=sommet.nom, 
                                              sommets_k_alpha=sommets_k_alpha)
-    voisins = set(sommets_k_alpha[sommet].voisins);
-    voisins.add(sommet)
+    voisins = set(sommets_k_alpha[sommet.nom].voisins);
+    voisins.add(sommet.nom)
     cliques = clique.find_clique(mat_subgraph, 
                                  voisins, 
                                  [])
-    cliques = [set(c) for c in cliques if sommet in c];
+    cliques = [set(c) for c in cliques if sommet.nom in c];
     return cliques
     pass
 ###############################################################################
@@ -229,7 +229,21 @@ def update_edges_neighbor(C1, C2, aretes, sommets):
     aretes = ce sont les aretes de mat_LG_k_alpha cad aretes_LG_k_alpha
     sommets = dictionnaire de classe sommet cad sommets_k_alpha
     """
+    for cliq in [C1, C2]:
+        if len(cliq) > 0:
+            aretes_cliq =  set(map(frozenset, it.combinations(cliq,2)))
+            aretes = aretes - aretes_cliq;
+         
+            # update voisinage
+            for sub_cliq in set(map(frozenset, 
+                                    it.combinations(cliq,len(cliq)-1))):
+                sommet = list(cliq - sub_cliq).pop()
+                voisins_som = sommets[sommet].voisins
+                voisins_som_new = voisins_som.union(sub_cliq) - sub_cliq;
+                sommets[sommet].voisins = voisins_som_new;
+                pass#pass for sub_cliq
     
+    return aretes, sommets;
     pass
 ###############################################################################
 #               supprimer les aretes des cliques et 
