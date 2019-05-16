@@ -32,9 +32,16 @@ class Noeud :
         
     def __repr__(self):
         """Quand on entre notre objet dans l'interpréteur"""
-        return "Noeud: nom({}), etat({}), voisins({}),ext_init({}),ext_final({})".format(
-                self.nom, self.etat, self.voisins, self.ext_init, self.ext_final);
-        
+#        return "Noeud: nom({}), etat({}), voisins({}),ext_init({}),ext_final({})".format(
+#                self.nom, self.etat, self.voisins, self.ext_init, self.ext_final);
+                
+        return "Noeud: nom({})".format(self.nom) +\
+                " etat({})".format(self.etat) +\
+                " cliques_S_1({})".format(self.cliques_S_1) +\
+                " voisins({})".format(self.voisins) +\
+                " ext_init({})".format(self.ext_init) +\
+                " ext_final({})".format(self.ext_final) ;
+                
     def combien_noeud(cls) :    
         """Méthode de classe affichant combien d'objets ont été créés"""
         print("Jusqu'à présent, {} noeuds ont été créés.".format(
@@ -77,17 +84,17 @@ class Noeud :
     
     etat = property(_get_etat, _set_etat);
     
-    def _get_cliques(self) :
+    def _get_cliques_S_1(self) :
         """ Methode affichant le nombre de cliques couvrants un sommet . 
         """
         return self._cliques_S_1;
     
-    def _set_cliques(self, nouveau_cliques_S_1) :
+    def _set_cliques_S_1(self, nouveau_cliques_S_1) :
         """ Methode pour modifier le nom du sommet.
         """
         self._cliques_S_1 = nouveau_cliques_S_1;
     
-    etat = property(_get_etat, _set_etat);
+    cliques_S_1 = property(_get_cliques_S_1, _set_cliques_S_1);
     
     
 ###############################################################################
