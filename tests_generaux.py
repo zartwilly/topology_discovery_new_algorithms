@@ -14,6 +14,11 @@ import fonctions_auxiliaires as fct_aux;
 import algo_couverture as algo_couv;
 import graph_discovery_simulation as gr_disco_simi;
 
+from bokeh.plotting import *
+from bokeh.models import ColumnDataSource
+from bokeh.plotting import figure, output_file, show, gridplot;
+from bokeh.core.properties import value
+from bokeh.palettes import Spectral5
 
 def test_sommets_mat_LG(nbre_sommets_GR = 5, 
                         nbre_moyen_liens = (2,5), 
@@ -358,8 +363,12 @@ def test_update_edges_neighbor(graphes_GR_LG):
         print("TEST update_edge, num_graph={}, res={}".format(num_graph,res));
     return pd.DataFrame.from_dict(dico_df).T;
     
-def test_algo_covers(graphes_GR_LG) :  
+def test_algo_covers(graphes_GR_LG) : 
+    """
+    test la fonction algo_cover et aussi is_exists_sommet
+    """
     f=lambda x: set(x.split("_"))
+    etat_recherche_1 = -1#0,1,2,3,-1;
     
     dico_df = dict()
     for graphe_GR_LG in graphes_GR_LG:
@@ -373,6 +382,9 @@ def test_algo_covers(graphes_GR_LG) :
         cliqs_couverts, aretes, sommets = \
                        algo_couv.clique_covers(mat_LG, aretes_LG, 
                                                sommets_LG,True);
+        exist_som_1 = None;
+        exist_som_1 = fct_aux.is_exists_sommet(sommets=sommets, 
+                                               etat_1=etat_recherche_1)
         runtime = round(time.time() - start, 2);
         
         som_trouves=[]
@@ -382,6 +394,20 @@ def test_algo_covers(graphes_GR_LG) :
             sommet_commun = set.intersection(*aretes);
             if sommet_commun != None and len(sommet_commun) == 1:
                 som_trouves.append(sommet_commun.pop())
+        
+        # calculer le nombre de sommets ayant un etat specifique
+        etat0, etat1, etat_1, etat2, etat3 = set(), set(), set(), set(), set();
+        for nom_som, sommet in sommets.items():
+            if sommet.etat == 0:
+                etat0.add(nom_som);
+            elif sommet.etat == 1:
+                etat1.add(nom_som);
+            elif sommet.etat == 2:
+                etat2.add(nom_som);
+            elif sommet.etat == 3:
+                etat3.add(nom_som);
+            elif sommet.etat == -1:
+                etat_1.add(nom_som);
         
         mat_GR = graphe_GR_LG[0]
         som_GR = set(mat_GR.columns)
@@ -393,22 +419,62 @@ def test_algo_covers(graphes_GR_LG) :
         else:
             res = 'NOK'
         
-        print("TEST cliques_cover num_graphe={} runtime={}, ==>res={}".format(
-                num_graph,runtime,res))
+        print("TEST cliques_cover num_graphe={} runtime={}, ==>res={}, exist_som={}".format(
+                num_graph,runtime,res, exist_som_1))
         
         dico_df[num_graph] = {"res":res,
                            "nbre_som_GR":len(som_GR),
                            "nbre_som_trouves":len(som_trouves),
                            "som_absents":som_absents,
                            "aretes_res":aretes,
+                           "etat0": len(etat0),
+                           "etat1": len(etat1),
+                           "etat2": len(etat2),
+                           "etat3": len(etat3),
+                           "etat_1": len(etat_1),
+                           "exist_som_1": exist_som_1,
                            "runtime":runtime
                }
         
     return pd.DataFrame.from_dict(dico_df).T;
 
+
 def test_execute_algos(graphes_GR_LG) :
     for graphe_GR_LG in graphes_GR_LG:
-        gr_disco_simi.execute_algos(*graphe_GR_LG);    
+        gr_disco_simi.execute_algos(*graphe_GR_LG); 
+    pass    
+        
+###############################################################################
+#                          plot in bokeh --> debut
+###############################################################################
+HEIGHT = 300;
+WIDTH = 600;
+def plot_stacked_bar(df):
+    """
+    ERREUR ==> a REPRENDRE
+    faire un diagramme en bar stratifies avec en abscisse les etats.
+    """
+    # output to static HTML file
+    output_file("state_node_clique_covers_dashboard.html");
+    TOOLS = "pan,wheel_zoom,box_zoom,reset,save,box_select,lasso_select";
+    
+    states = ['etat0', 'etat1', 'etat2', 'etat3', 'etat_1'];
+    data = df[states]
+    data.index.name = 'graphs';
+    data_gr = data.groupby('graphs')[states].sum()
+    source = ColumnDataSource(data=data_gr)
+    graphs = source.data['graphs'].tolist() 
+    p = figure(x_range=graphs, tools=TOOLS, plot_height=HEIGHT, plot_width=WIDTH)
+    
+    p.vbar_stack(stackers=states, x='graphs', width=0.4,  color=Spectral5,
+                 legend=states)
+    p.xaxis.major_label_orientation = 1
+    show(p)
+    pass        
+###############################################################################
+#                          plot in bokeh --> fin
+###############################################################################
+        
 if __name__ == '__main__':
     start = time.time();
     
