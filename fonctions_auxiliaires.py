@@ -79,7 +79,7 @@ def convert_sommet_to_df(sommets_k_alpha):
 
 def is_exists_sommet(sommets, etat_1=-1):
     """
-    verifier s'il existe au moins un sommet ayant un etat a -1 
+    verifier s'il existe au moins un sommet ayant un etat a -1. 
     """
     bool_is_exists = False;
     nom_soms = list(sommets.keys())
@@ -90,4 +90,17 @@ def is_exists_sommet(sommets, etat_1=-1):
     
         pass # end while not 
     return bool_is_exists;
+    pass
+
+def modify_state_sommets_mat_LG(sommets,
+                          sommets_res):
+    """
+    modifier les etats de mat_LG en fpnction du resultat des algos contenu 
+    dans sommets_k_alpha_res.
+    """
+    for nom_som, sommet in sommets.items():
+        sommet.etat = sommets_res[nom_som].etat;
+        sommet.cliques_S_1 = sommets_res[nom_som].cliques_S_1;
+    
+    return sommets
     pass
