@@ -17,6 +17,7 @@ import itertools as it;
 import genererMatA as geneMatA;
 import fonctions_auxiliaires as fct_aux;
 import algo_couverture as algoCouverture;
+import algo_correction as algoCorrection;
 
 import defs_classes as def_class;
 import creation_graphe as creat_gr;
@@ -115,7 +116,48 @@ def add_remove_edges(mat_LG, aretes_LG, k_erreur, prob):
 #               add or/andremove k edges -> FIN
 ###############################################################################
 
-
+###############################################################################
+#           analyser les resultats d'une execution de Graphe ==> DEBUT
+###############################################################################
+def analyse_resultat(cliques_couvertures, 
+                     sommets_k_alpha_res,
+                     sommets_GR):
+    """
+    analyser les resultats d'une execution (cad algo de couverture ou correction)
+    sur un graphe G_k_alpha.
+    """
+    f=lambda x: set(x.split("_"))
+    
+    sommets_trouves=[]
+    for cliq in cliques_couvertures:
+        aretes = list(map(f, cliq))
+        sommet_commun = None;
+        sommet_commun = set.intersection(*aretes);
+        if sommet_commun != None and len(sommet_commun) == 1:
+            sommets_trouves.append(sommet_commun.pop())
+    
+    # calculer le nombre de sommets ayant un etat specifique
+    etat0, etat1, etat_1, etat2, etat3 = set(), set(), set(), set(), set();
+    for nom_som, sommet in sommets_k_alpha_res.items():
+        if sommet.etat == 0:
+            etat0.add(nom_som);
+        elif sommet.etat == 1:
+            etat1.add(nom_som);
+        elif sommet.etat == 2:
+            etat2.add(nom_som);
+        elif sommet.etat == 3:
+            etat3.add(nom_som);
+        elif sommet.etat == -1:
+            etat_1.add(nom_som);
+    
+    sommets_absents = sommets_GR.union(sommets_trouves) - set(sommets_trouves)
+    return sommets_trouves, sommets_absents, \
+            etat0, etat1, etat_1, etat2, etat3
+    pass
+###############################################################################
+#           analyser les resultats d'une execution de Graphe ==> FIN
+###############################################################################
+    
 ###############################################################################
 #               execute_algos (couverture and correction)-> DEBUT
 ###############################################################################
@@ -137,12 +179,14 @@ def execute_algos(mat_GR,
     print("num_graph_G_k={} <=== debut ===>".format(num_graph_G_k))
     start_G_k = time.time()
     
+    results_k_alpha = [];
     moy_dh, moy_dc = 0, 0;
     sum_dh, sum_dc = np.inf, np.inf;
     
     aretes_LG = fct_aux.aretes(mat_LG, orientation=False, val_0_1=1)
     
     for alpha_ in range(0,alpha):
+        result_k_alpha = None;
         mat_LG_k_alpha, aretes_LG_k_alpha, aretes_modifiees = \
                                             add_remove_edges(
                                                     mat_LG, 
@@ -154,21 +198,71 @@ def execute_algos(mat_GR,
                               NOM_MATE_LG_k_alpha + str(alpha_) + EXTENSION, 
                               index_label = INDEX_COL_MATE_LG)
         sommets_k_alpha = creat_gr.sommets_mat_LG(mat_LG_k_alpha);
+        
         # algo couverture
-#        cliques_couvertures, aretes_LG_k_alpha_res, sommets_k_alpha_res = \
-#                                algoCouverture.clique_covers(
-#                                    mat_LG_k_alpha, 
-#                                    aretes_LG_k_alpha, 
-#                                    sommets_k_alpha)
+        #TODO : A TESTER.
+        cliques_couvertures, aretes_LG_k_alpha_res, sommets_k_alpha_res = \
+                                algoCouverture.clique_covers(
+                                    mat_LG_k_alpha, 
+                                    aretes_LG_k_alpha, 
+                                    sommets_k_alpha)
+        sommets_trouves_couv=[]; sommets_absents_couv=set();
+        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
+                                        set(), set(), set(), set(), set();
+        sommets_trouves_couv, sommets_absents_couv, \
+        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
+            analyse_resultat(cliques_couvertures,
+                             sommets_k_alpha_res, 
+                             set(mat_GR.columns))
+            
         # algo de correction
+        # TODO : A TESTER
+        sommets_trouves_cor=[]; sommets_absents_cor=set();
+        etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
+                                        set(), set(), set(), set(), set();
+        aretes_LG_k_alpha_cor = []
+        if fct_aux.is_exists_sommet(sommets=sommets_k_alpha, etat_1=-1):
+            aretes_LG_k_alpha_cor = aretes_LG_k_alpha_res.copy();
+#            cliques_couvertures_1 = cliques_couvertures.copy();
+#            aretes_res_non_effacees = list(map(set, aretes_LG_k_alpha_res));
+#            cliques_couvertures_1.extend(aretes_res_non_effacees);
+#            sommets_tmp = creat_gr.sommets_mat_LG(mat_LG_k_alpha)
+#            sommets_k_alpha_1 = fct_aux.modify_state_sommets_mat_LG(
+#                                    sommets=sommets_tmp,
+#                                    sommets_res=sommets_k_alpha_res)
+#            cliques_couvertures_cor, \
+#            aretes_LG_k_alpha_cor,\
+#            sommets_k_alpha_cor = \
+#                            algoCorrection.correction_algo(
+#                                cliques_couverture=cliques_couvertures_1,
+#                                aretes_LG_k_alpha=aretes_LG_k_alpha,
+#                                sommets_LG=sommets_k_alpha_1
+#                                      )
+#            sommets_trouves_cor, sommets_absents_cor, \
+#            etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
+#            analyse_resultat(cliques_couvertures_cor,
+#                             sommets_k_alpha_cor, 
+#                             set(mat_GR.columns))
         
         # calcul distance
         dc_alpha = len(calculate_hamming_distance(
-                                        mat_LG = aretes_LG, 
-                                        mat_LG_k = aretes_LG_k_alpha))         # aretes_LG_k_alpha_ est celle apres correction. On peut ajouter aussi aretes_LG_k_alpha
+                                        mat_LG = aretes_LG_k_alpha, 
+                                        mat_LG_k = aretes_LG_k_alpha_cor))         # aretes_LG_k_alpha_ est celle apres correction. On peut ajouter aussi aretes_LG_k_alpha
         dh_alpha = len(calculate_hamming_distance(
                                         mat_LG = aretes_LG, 
-                                        mat_LG_k = aretes_LG_k_alpha))
+                                        mat_LG_k = aretes_LG_k_alpha_cor))
+        
+        #resultat d'un execution k_alpha
+        result_k_alpha = (num_graph_G_k,k_erreur,alpha,mode,critere,prob,
+                len(sommets_trouves_couv),len(sommets_absents_couv),
+                len(etat0_couv),len(etat1_couv),len(etat_1_couv),
+                len(etat2_couv),len(etat3_couv),
+                len(sommets_trouves_cor),len(sommets_absents_cor),
+                len(etat0_cor),len(etat1_cor),len(etat_1_cor),
+                len(etat2_cor),len(etat3_cor),
+                          dc_alpha, dh_alpha
+                          )
+        results_k_alpha.append(result_k_alpha);
         
         sum_dc = dc_alpha if sum_dc == np.inf else sum_dc+dc_alpha;
         sum_dh = dh_alpha if sum_dh == np.inf else sum_dh+dh_alpha;
@@ -203,6 +297,10 @@ def execute_algos(mat_GR,
     
     print("num_graph_G_k={} <=== Termine :runtime={} ===>".format(
             num_graph_G_k, round(time.time()-start_G_k, 4)))
+    if DBG :
+        return results_k_alpha;
+    else:
+        return [];
     pass  # execute_algo
 
 ###############################################################################
