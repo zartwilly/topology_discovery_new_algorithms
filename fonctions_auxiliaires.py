@@ -75,3 +75,19 @@ def convert_sommet_to_df(sommets_k_alpha):
      
     df.fillna(0, inplace=True);
     return df.astype(int);
+
+
+def is_exists_sommet(sommets, etat_1=-1):
+    """
+    verifier s'il existe au moins un sommet ayant un etat a -1 
+    """
+    bool_is_exists = False;
+    nom_soms = list(sommets.keys())
+    while not bool_is_exists and len(nom_soms) != 0:
+        nom_som = nom_soms.pop()
+        if sommets[nom_som].etat == etat_1:
+            bool_is_exists = True;
+    
+        pass # end while not 
+    return bool_is_exists;
+    pass
