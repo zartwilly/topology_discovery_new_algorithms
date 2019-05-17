@@ -379,12 +379,19 @@ def test_algo_covers(graphes_GR_LG) :
         aretes_LG = fct_aux.aretes(mat_LG); 
         sommets_LG = creat_gr.sommets_mat_LG(mat_LG)
         start = time.time()
+        #test cliques_covers
         cliqs_couverts, aretes, sommets = \
                        algo_couv.clique_covers(mat_LG, aretes_LG, 
                                                sommets_LG,True);
+        # test is_exists_sommet
         exist_som_1 = None;
         exist_som_1 = fct_aux.is_exists_sommet(sommets=sommets, 
                                                etat_1=etat_recherche_1)
+        # test modify_state_sommets_mat_LG => pas fait car je ne sais pas ce que je dois comparer
+#        sommets_tmp = creat_gr.sommets_mat_LG(mat_LG);
+#        sommets_LG_after = fct_aux.modify_state_sommets_mat_LG(
+#                                sommets=sommets_tmp,
+#                                sommets_res=sommets)
         runtime = round(time.time() - start, 2);
         
         som_trouves=[]
