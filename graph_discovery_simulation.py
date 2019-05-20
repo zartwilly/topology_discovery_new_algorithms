@@ -205,7 +205,8 @@ def execute_algos(mat_GR,
                                 algoCouverture.clique_covers(
                                     mat_LG_k_alpha, 
                                     aretes_LG_k_alpha, 
-                                    sommets_k_alpha)
+                                    sommets_k_alpha, 
+                                    DBG)
         sommets_trouves_couv=[]; sommets_absents_couv=set();
         etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
                                         set(), set(), set(), set(), set();
@@ -253,7 +254,7 @@ def execute_algos(mat_GR,
                                         mat_LG_k = aretes_LG_k_alpha_cor))
         
         #resultat d'un execution k_alpha
-        result_k_alpha = (num_graph_G_k,k_erreur,alpha,mode,critere,prob,
+        result_k_alpha = (num_graph_G_k,k_erreur,alpha_,mode,critere,prob,
                 len(sommets_trouves_couv),len(sommets_absents_couv),
                 len(etat0_couv),len(etat1_couv),len(etat_1_couv),
                 len(etat2_couv),len(etat3_couv),
@@ -295,6 +296,7 @@ def execute_algos(mat_GR,
             str(correl_dc_dh) + "\n"
             )
     
+    print("results_k_alpha={}".format(len(results_k_alpha)))
     print("num_graph_G_k={} <=== Termine :runtime={} ===>".format(
             num_graph_G_k, round(time.time()-start_G_k, 4)))
     if DBG :
@@ -352,7 +354,8 @@ def define_parameters(dico_parametres):
                             nbre_moyen_liens = dico_parametres["nbre_moyen_liens"], 
                             chemin_matrice = chemin_matrice)
         
-        num_graph = "G_" + str(nbre_graphe) + "_" + str(k_erreur)
+        num_graph = "G_" + str(nbre_graphe) + "_" + str(k_erreur) + "_" +\
+                    "".join(str(prob).split('.'))
         graphes_GR_LG.append( (mat_GR, 
                                mat_LG, 
                                chemin_matrice, 
