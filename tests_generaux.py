@@ -21,6 +21,8 @@ from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure, output_file, show, gridplot;
 from bokeh.core.properties import value
 from bokeh.palettes import Spectral5
+from bokeh.models.tools import HoverTool
+
 
 def test_sommets_mat_LG(nbre_sommets_GR = 5, 
                         nbre_moyen_liens = (2,5), 
@@ -549,30 +551,131 @@ def test_execute_algos(graphes_GR_LG) :
 ###############################################################################
 #                          plot in bokeh --> debut
 ###############################################################################
-HEIGHT = 300;
-WIDTH = 600;
-def plot_stacked_bar(df):
-    """
-    ERREUR ==> a REPRENDRE
-    faire un diagramme en bar stratifies avec en abscisse les etats.
-    """
+#HEIGHT = 300;
+#WIDTH = 600;
+#def plot_stacked_bar(df):
+#    """
+#    ERREUR ==> a REPRENDRE
+#    faire un diagramme en bar stratifies avec en abscisse les etats.
+#    """
+#    # output to static HTML file
+#    output_file("state_node_clique_covers_dashboard.html");
+#    TOOLS = "pan,wheel_zoom,box_zoom,reset,save,box_select,lasso_select";
+#    
+#    states = ['etat0', 'etat1', 'etat2', 'etat3', 'etat_1'];
+#    data = df[states]
+#    data.index.name = 'graphs';
+#    data_gr = data.groupby('graphs')[states].sum()
+#    source = ColumnDataSource(data=data_gr)
+#    graphs = source.data['graphs'].tolist() 
+#    p = figure(x_range=graphs, tools=TOOLS, plot_height=HEIGHT, plot_width=WIDTH)
+#    
+#    p.vbar_stack(stackers=states, x='graphs', width=0.4,  color=Spectral5,
+#                 legend=states)
+#    p.xaxis.major_label_orientation = 1
+#    show(p)
+#    pass  
+
+HEIGHT = 600;
+WIDTH = 1300;
+def plot_stacked_bar(df, cols, tooltips, couv_cor):
+    
     # output to static HTML file
     output_file("state_node_clique_covers_dashboard.html");
     TOOLS = "pan,wheel_zoom,box_zoom,reset,save,box_select,lasso_select";
     
-    states = ['etat0', 'etat1', 'etat2', 'etat3', 'etat_1'];
-    data = df[states]
-    data.index.name = 'graphs';
-    data_gr = data.groupby('graphs')[states].sum()
-    source = ColumnDataSource(data=data_gr)
-    graphs = source.data['graphs'].tolist() 
-    p = figure(x_range=graphs, tools=TOOLS, plot_height=HEIGHT, plot_width=WIDTH)
+    df_numgraph = df.groupby('num_graph_G_k')[cols].mean()
+    df_numgraph['sum'] = df_numgraph.sum(axis=1)
     
-    p.vbar_stack(stackers=states, x='graphs', width=0.4,  color=Spectral5,
-                 legend=states)
+    source = ColumnDataSource(df_numgraph)
+    
+    graphs = df_numgraph.index.tolist() # graphs = source.data['num_graph_G_k'].tolist()
+    p = figure(x_range=graphs,
+               tools=TOOLS, 
+               plot_height=HEIGHT, plot_width=WIDTH)
+    
+    p.vbar_stack(x='num_graph_G_k',
+           stackers=cols,
+           source=source, 
+           legend = ['etat0', 'etat1', 'etat_1', 'etat2', 'etat3'],
+           width=0.50, color=Spectral5)
+
+    
+    p.title.text ='etats des graphes '+ couv_cor;
+    p.xaxis.axis_label = 'graphs'
+    p.yaxis.axis_label = ''
     p.xaxis.major_label_orientation = 1
+    
+    hover = HoverTool()
+    hover.tooltips = tooltips
+    hover.mode = 'vline'
+    p.add_tools(hover)
+    
     show(p)
-    pass        
+    
+    pass
+
+def plot_stacked_bar_margin(df, cols, tooltips, couv_cor):
+    
+    # output to static HTML file
+    output_file("state_node_clique_covers_dashboard.html");
+    TOOLS = "pan,wheel_zoom,box_zoom,reset,save,box_select,lasso_select";
+    
+    df_numgraph = df.groupby('num_graph_G_k')[cols].mean()
+    
+    df_numgraph['sum'] = df_numgraph.sum(axis=1)
+    df_percent = df_numgraph.div(df_numgraph['sum'], axis=0)
+    df_percent = round(df_percent,2)
+    df_percent['sum'] = df_percent['sum'] * df_numgraph['sum'];
+    
+    source = ColumnDataSource(df_percent)
+    
+    graphs = source.data['num_graph_G_k'].tolist()
+    p = figure(x_range=graphs,
+               tools=TOOLS, 
+               plot_height=HEIGHT, plot_width=WIDTH)
+    
+    p.vbar_stack(x='num_graph_G_k',
+           stackers=cols,
+           source=source, 
+           legend = ['etat0', 'etat1', 'etat_1', 'etat2', 'etat3'],
+           width=0.50, color=Spectral5)
+
+    
+    p.title.text ='etats des graphes '+ couv_cor;
+    p.xaxis.axis_label = 'graphs'
+    p.yaxis.axis_label = ''
+    p.xaxis.major_label_orientation = 1
+    
+    hover = HoverTool()
+    hover.tooltips = tooltips 
+    
+    hover.mode = 'vline'
+    p.add_tools(hover)
+    
+    show(p)      
+    
+def test_plot_bokeh(path_to_save_file, couv_cor, BOOL_MARGIN):
+    df = pd.read_csv(path_to_save_file, index_col=0)
+    
+    cols, tooltips = "", "";
+    if couv_cor == "couverture":
+        cols = ['etat0_couv', 'etat1_couv', 'etat_1_couv', 
+                 'etat2_couv', 'etat3_couv']
+        tooltips = [('total etats','@sum'),('etat0','@etat0_couv'),
+                ('etat1','@etat1_couv'),("etat_1","@etat_1_couv"),
+                ('etat2','@etat2_couv'),('etat3','@etat3_couv')]
+    else:
+        cols = ['etat0_cor', 'etat1_cor', 'etat_1_cor', 'etat2_cor', 
+                'etat3_cor']
+        tooltips = [('total etats','@sum'),('etat0','@etat0_cor'),
+                ('etat1','@etat1_cor'),("etat_1","@etat_1_cor"),
+                ('etat2','@etat2_cor'),('etat3','@etat3_cor')]
+    if BOOL_MARGIN:
+        plot_stacked_bar(df, cols, tooltips, couv_cor)
+    else:
+        plot_stacked_bar_margin(df, cols, tooltips, couv_cor)
+        
 ###############################################################################
 #                          plot in bokeh --> fin
 ###############################################################################
@@ -632,5 +735,13 @@ if __name__ == '__main__':
 #    df_modify_state = test_modify_state_sommets_mat_LG(graphes_GR_LG)
     
     df_exec_algo, df_exec_algo_num_graph = test_execute_algos(graphes_GR_LG)
+    
+    path_to_save_file = 'visualisation_test'+'/'+\
+                        'execution_algos_N_10_K_5_Alpha_2.csv'
+    df_exec_algo.to_csv(path_to_save_file)
+    
+    couv_cor = "correction"; # couverture/correction
+    BOOL_MARGIN = False;
+    test_plot_bokeh(path_to_save_file, couv_cor, BOOL_MARGIN)
     
     print("runtime : {}".format( time.time() - start))
