@@ -12,6 +12,8 @@ import pandas as pd;
 import creation_graphe as creat_gr;
 import fonctions_auxiliaires as fct_aux;
 import algo_couverture as algo_couv;
+import algo_correction as algoCorrection;
+
 import graph_discovery_simulation as gr_disco_simi;
 
 from bokeh.plotting import *
@@ -445,6 +447,78 @@ def test_algo_covers(graphes_GR_LG) :
         
     return pd.DataFrame.from_dict(dico_df).T;
 
+def test_modify_state_sommets_mat_LG(graphes_GR_LG):
+    
+    results_k_alpha = []
+    cols = ['num_graph',
+            'sommets_trouves_couv','sommets_absents_couv',
+            'etat0_couv','etat1_couv','etat_1_couv',
+            'etat2_couv','etat3_couv',
+            'sommets_trouves_cor','sommets_absents_cor',
+            'etat0_cor','etat1_cor','etat_1_cor',
+            'etat2_cor','etat3_cor','res']
+    for graphe_GR_LG in graphes_GR_LG:
+        num_graph = graphe_GR_LG[8]+"_p_"+str(graphe_GR_LG[5]);
+        
+        mat_LG = graphe_GR_LG[1]; mat_GR = graphe_GR_LG[0];
+        aretes_LG = fct_aux.aretes(mat_LG); 
+        sommets_LG = creat_gr.sommets_mat_LG(mat_LG)
+        
+        #test cliques_covers
+        cliqs_couverts, aretes, sommets = \
+                       algo_couv.clique_covers(mat_LG, aretes_LG, 
+                                               sommets_LG,True);
+        
+        # verif l'etat des sommets apres couverture
+        sommets_trouves_couv=[]; sommets_absents_couv=set();
+        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
+                                        set(), set(), set(), set(), set();
+        sommets_trouves_couv, sommets_absents_couv, \
+        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
+            gr_disco_simi.analyse_resultat(cliqs_couverts,
+                             sommets, 
+                             set(mat_GR.columns))
+            
+        # test correction
+        sommets_tmp = creat_gr.sommets_mat_LG(mat_LG)
+        sommets_k_alpha_1 = fct_aux.modify_state_sommets_mat_LG(
+                                sommets=sommets_tmp,
+                                sommets_res=sommets)
+        cliques_couvertures_cor, \
+        aretes_LG_k_alpha_cor,\
+        sommets_k_alpha_cor = \
+                        algoCorrection.correction_algo(
+                            cliques_couverture=set(cliqs_couverts),
+                            aretes_LG_k_alpha=aretes_LG,
+                            sommets_LG=sommets_k_alpha_1
+                                      )
+        # verif l'etat des sommets apres correction
+        sommets_trouves_cor, sommets_absents_cor, \
+        etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
+            gr_disco_simi.analyse_resultat(cliques_couvertures_cor,
+                             sommets_k_alpha_cor, 
+                             set(mat_GR.columns))
+        
+        if etat0_couv == etat0_cor and etat1_couv == etat1_cor and \
+            etat_1_couv == etat_1_cor and etat2_couv == etat2_cor and \
+            etat3_couv == etat3_cor :
+                res = "OK"
+        else: 
+            res = "NOK"
+        result_k_alpha = (num_graph,
+                len(sommets_trouves_couv),len(sommets_absents_couv),
+                len(etat0_couv),len(etat1_couv),len(etat_1_couv),
+                len(etat2_couv),len(etat3_couv),
+                len(sommets_trouves_cor),len(sommets_absents_cor),
+                len(etat0_cor),len(etat1_cor),len(etat_1_cor),
+                len(etat2_cor),len(etat3_cor),
+                          res
+                          )
+        results_k_alpha.append(result_k_alpha);
+    
+    df = pd.DataFrame(results_k_alpha, columns=cols)
+    return df;
+    pass
 
 def test_execute_algos(graphes_GR_LG) :
     res = [];
@@ -543,17 +617,20 @@ if __name__ == '__main__':
                        }
     graphes_GR_LG = test_define_parameters(dico_parametres);
     
-    df_test_add_remove = test_add_remove_edges(graphes_GR_LG)
+#    df_test_add_remove = test_add_remove_edges(graphes_GR_LG)
+#    
+#    df_DH = test_calculate_hamming_distance(graphes_GR_LG)
+#    
+#    df_is_state_select_node = test_is_state_selected_node(graphes_GR_LG);
+#    
+#    df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
+#    
+#    test_verify_cliques();
+#    test_update_edges_neighbor(graphes_GR_LG);
+#    df_cliq_covers = test_algo_covers(graphes_GR_LG)
     
-    df_DH = test_calculate_hamming_distance(graphes_GR_LG)
+#    df_modify_state = test_modify_state_sommets_mat_LG(graphes_GR_LG)
     
-    df_is_state_select_node = test_is_state_selected_node(graphes_GR_LG);
+    df_exec_algo, df_exec_algo_num_graph = test_execute_algos(graphes_GR_LG)
     
-    df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
-    
-    test_verify_cliques();
-    test_update_edges_neighbor(graphes_GR_LG);
-    df_cliq_covers = test_algo_covers(graphes_GR_LG)
-    
-    df_res, df_num_graph = test_execute_algos(graphes_GR_LG)
     print("runtime : {}".format( time.time() - start))
