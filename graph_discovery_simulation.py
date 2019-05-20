@@ -200,7 +200,6 @@ def execute_algos(mat_GR,
         sommets_k_alpha = creat_gr.sommets_mat_LG(mat_LG_k_alpha);
         
         # algo couverture
-        #TODO : A TESTER.
         cliques_couvertures, aretes_LG_k_alpha_res, sommets_k_alpha_res = \
                                 algoCouverture.clique_covers(
                                     mat_LG_k_alpha, 
@@ -217,33 +216,33 @@ def execute_algos(mat_GR,
                              set(mat_GR.columns))
             
         # algo de correction
-        # TODO : A TESTER
         sommets_trouves_cor=[]; sommets_absents_cor=set();
         etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
                                         set(), set(), set(), set(), set();
         aretes_LG_k_alpha_cor = []
         if fct_aux.is_exists_sommet(sommets=sommets_k_alpha, etat_1=-1):
             aretes_LG_k_alpha_cor = aretes_LG_k_alpha_res.copy();
-#            cliques_couvertures_1 = cliques_couvertures.copy();
-#            aretes_res_non_effacees = list(map(set, aretes_LG_k_alpha_res));
-#            cliques_couvertures_1.extend(aretes_res_non_effacees);
-#            sommets_tmp = creat_gr.sommets_mat_LG(mat_LG_k_alpha)
-#            sommets_k_alpha_1 = fct_aux.modify_state_sommets_mat_LG(
-#                                    sommets=sommets_tmp,
-#                                    sommets_res=sommets_k_alpha_res)
-#            cliques_couvertures_cor, \
-#            aretes_LG_k_alpha_cor,\
-#            sommets_k_alpha_cor = \
-#                            algoCorrection.correction_algo(
-#                                cliques_couverture=cliques_couvertures_1,
-#                                aretes_LG_k_alpha=aretes_LG_k_alpha,
-#                                sommets_LG=sommets_k_alpha_1
-#                                      )
-#            sommets_trouves_cor, sommets_absents_cor, \
-#            etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
-#            analyse_resultat(cliques_couvertures_cor,
-#                             sommets_k_alpha_cor, 
-#                             set(mat_GR.columns))
+            cliques_couvertures_1 = list(cliques_couvertures.copy());
+            aretes_res_non_effacees = list(map(frozenset, 
+                                               aretes_LG_k_alpha_res));
+            cliques_couvertures_1.extend(aretes_res_non_effacees);
+            sommets_tmp = creat_gr.sommets_mat_LG(mat_LG_k_alpha)
+            sommets_k_alpha_1 = fct_aux.modify_state_sommets_mat_LG(
+                                    sommets=sommets_tmp,
+                                    sommets_res=sommets_k_alpha_res)
+            cliques_couvertures_cor, \
+            aretes_LG_k_alpha_cor,\
+            sommets_k_alpha_cor = \
+                            algoCorrection.correction_algo(
+                                cliques_couverture=set(cliques_couvertures_1),
+                                aretes_LG_k_alpha=aretes_LG_k_alpha,
+                                sommets_LG=sommets_k_alpha_1
+                                      )
+            sommets_trouves_cor, sommets_absents_cor, \
+            etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
+            analyse_resultat(cliques_couvertures_cor,
+                             sommets_k_alpha_cor, 
+                             set(mat_GR.columns))
         
         # calcul distance
         dc_alpha = len(calculate_hamming_distance(
@@ -354,7 +353,7 @@ def define_parameters(dico_parametres):
                             nbre_moyen_liens = dico_parametres["nbre_moyen_liens"], 
                             chemin_matrice = chemin_matrice)
         
-        num_graph = "G_" + str(nbre_graphe) + "_" + str(k_erreur) + "_" +\
+        num_graph = "G_" + str(nbre_graphe) + "_" + str(k_erreur) + "_p_" +\
                     "".join(str(prob).split('.'))
         graphes_GR_LG.append( (mat_GR, 
                                mat_LG, 
