@@ -447,8 +447,29 @@ def test_algo_covers(graphes_GR_LG) :
 
 
 def test_execute_algos(graphes_GR_LG) :
+    res = [];
     for graphe_GR_LG in graphes_GR_LG:
-        gr_disco_simi.execute_algos(*graphe_GR_LG); 
+        res_tmp = []
+        res_tmp = gr_disco_simi.execute_algos(*graphe_GR_LG);
+        res.extend(res_tmp)
+    print("len(res) = {}".format(len(res)))
+    
+    # transform res en un DataFrame
+    cols = ['num_graph_G_k','k_erreur','alpha','mode','critere','prob',
+            'sommets_trouves_couv','sommets_absents_couv',
+            'etat0_couv','etat1_couv','etat_1_couv','etat2_couv','etat3_couv',
+            'sommets_trouves_cor','sommets_absents_cor',
+            'etat0_cor','etat1_cor','etat_1_cor','etat2_cor','etat3_cor',
+            'dc', 'dh']
+    cols_group = ['sommets_trouves_couv','sommets_absents_couv',
+            'etat0_couv','etat1_couv','etat_1_couv','etat2_couv','etat3_couv',
+            'sommets_trouves_cor','sommets_absents_cor',
+            'etat0_cor','etat1_cor','etat_1_cor','etat2_cor','etat3_cor',
+            'dc', 'dh'] 
+    df = pd.DataFrame(res, columns=cols)
+    df_num_graph = df.groupby('num_graph_G_k')[cols_group].mean()
+    
+    return df, df_num_graph;
     pass    
         
 ###############################################################################
@@ -506,7 +527,7 @@ if __name__ == '__main__':
     prob_min, prob_max = 0,1; step_prob = 1.0;                                                         # je veux supprimer des aretes uniquement 
     probs = np.arange(prob_min, prob_max+0.1, step_prob)
     nbre_graphes = range(1, nbre_graphe+1, 1)
-    ALPHA = 1; NUM_ITEM_Pi1_Pi2 = 0.5; DBG = True;
+    ALPHA = 2; NUM_ITEM_Pi1_Pi2 = 0.5; DBG = True;
     rep_data = "tests"; log_file  = "", 
     dico_parametres = {
             "rep_data": rep_data, "log_file":log_file, 
@@ -533,5 +554,6 @@ if __name__ == '__main__':
     test_verify_cliques();
     test_update_edges_neighbor(graphes_GR_LG);
     df_cliq_covers = test_algo_covers(graphes_GR_LG)
-    #test_execute_algos(graphes_GR_LG)
+    
+    df_res, df_num_graph = test_execute_algos(graphes_GR_LG)
     print("runtime : {}".format( time.time() - start))
