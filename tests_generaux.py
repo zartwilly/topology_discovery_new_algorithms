@@ -549,6 +549,38 @@ def test_execute_algos(graphes_GR_LG) :
     pass    
         
 ###############################################################################
+#                test pour fonctions de correction --> debut
+###############################################################################
+def test_grouped_cliques_by_node(graphes_GR_LG):
+    etat = 2;
+    dico_df = dict()
+    for graphe_GR_LG in graphes_GR_LG:
+        num_graph = graphe_GR_LG[8]+"_p_"+str(graphe_GR_LG[5]);
+        
+        mat_LG = graphe_GR_LG[1]; #mat_GR = graphe_GR_LG[0];
+        aretes_LG = fct_aux.aretes(mat_LG); 
+        sommets_LG = creat_gr.sommets_mat_LG(mat_LG)
+        
+        #test cliques_covers
+        cliqs_couverts, aretes, sommets = \
+                       algo_couv.clique_covers(mat_LG, aretes_LG, 
+                                               sommets_LG,True);
+        noms_sommets = fct_aux.node_names_by_state(sommets=sommets, 
+                                                   etat_1=etat)
+        dico_cliques = fct_aux.grouped_cliques_by_node(
+                                    cliques=cliqs_couverts, 
+                                    noms_sommets_1=noms_sommets)
+        
+        dico_df[num_graph]={"noms_sommets":noms_sommets}
+        for nom, liste_cliques in dico_cliques.items():
+            dico_df[num_graph][nom] = liste_cliques;
+    
+    return pd.DataFrame.from_dict(dico_df).T
+###############################################################################
+#                test pour fonctions de correction --> fin
+###############################################################################
+    
+###############################################################################
 #                          plot in bokeh --> debut
 ###############################################################################
 #HEIGHT = 300;
@@ -688,6 +720,8 @@ if __name__ == '__main__':
     chemin_matrice = "tests/matrices/";
     nbre_graphe = 10;
     
+    bool_couverture, bool_correction = False, True #True, True;
+    
     test_sommets_mat_LG(nbre_sommets_GR, 
                         nbre_moyen_liens, 
                         chemin_matrice)
@@ -720,28 +754,35 @@ if __name__ == '__main__':
                        }
     graphes_GR_LG = test_define_parameters(dico_parametres);
     
-#    df_test_add_remove = test_add_remove_edges(graphes_GR_LG)
-#    
-#    df_DH = test_calculate_hamming_distance(graphes_GR_LG)
-#    
-#    df_is_state_select_node = test_is_state_selected_node(graphes_GR_LG);
-#    
-#    df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
-#    
-#    test_verify_cliques();
-#    test_update_edges_neighbor(graphes_GR_LG);
-#    df_cliq_covers = test_algo_covers(graphes_GR_LG)
-    
-#    df_modify_state = test_modify_state_sommets_mat_LG(graphes_GR_LG)
-    
-    df_exec_algo, df_exec_algo_num_graph = test_execute_algos(graphes_GR_LG)
-    
-    path_to_save_file = 'visualisation_test'+'/'+\
-                        'execution_algos_N_10_K_5_Alpha_2.csv'
-    df_exec_algo.to_csv(path_to_save_file)
-    
-    couv_cor = "correction"; # couverture/correction
-    BOOL_MARGIN = False;
-    test_plot_bokeh(path_to_save_file, couv_cor, BOOL_MARGIN)
+    if bool_couverture and not bool_correction :
+        df_test_add_remove = test_add_remove_edges(graphes_GR_LG)
+        
+        df_DH = test_calculate_hamming_distance(graphes_GR_LG)
+        
+        df_is_state_select_node = test_is_state_selected_node(graphes_GR_LG);
+        
+        df_subgraph = test_build_matrice_of_subgraph(graphes_GR_LG);
+        
+        test_verify_cliques();
+        test_update_edges_neighbor(graphes_GR_LG);
+        df_cliq_covers = test_algo_covers(graphes_GR_LG)
+        
+        df_modify_state = test_modify_state_sommets_mat_LG(graphes_GR_LG)
+        
+        df_exec_algo, df_exec_algo_num_graph = test_execute_algos(graphes_GR_LG)
+        
+        path_to_save_file = 'visualisation_test'+'/'+\
+                            'execution_algos_N_10_K_5_Alpha_2.csv'
+        df_exec_algo.to_csv(path_to_save_file)
+        
+        couv_cor = "correction"; # couverture/correction
+        BOOL_MARGIN = False;
+        test_plot_bokeh(path_to_save_file, couv_cor, BOOL_MARGIN)
+        
+    elif not bool_couverture and bool_correction:
+        df_corr_grouped_cliqs = test_grouped_cliques_by_node(graphes_GR_LG)
+        pass
+    elif bool_couverture and bool_correction:
+        pass
     
     print("runtime : {}".format( time.time() - start))
