@@ -115,3 +115,18 @@ def node_names_by_state(sommets, etat_1):
             noms_sommets.add(nom);
             
     return noms_sommets;
+
+def grouped_cliques_by_node(cliques, noms_sommets_1):
+    """
+    retourner un dictionnaire contenant les cliques par sommets
+    """
+    dico = dict(); 
+    for clique  in cliques:
+        sommets_communs = clique.intersection(noms_sommets_1);
+        for nom_sommet in sommets_communs:
+            if nom_sommet not in dico:
+                dico[nom_sommet] = [clique]
+            else:
+                dico[nom_sommet].append(clique)
+                
+    return dico;
