@@ -104,3 +104,14 @@ def modify_state_sommets_mat_LG(sommets,
     
     return sommets
     pass
+
+def node_names_by_state(sommets, etat_1):
+    """
+    retourner le nom des sommets ayant pour etat etat_1.
+    """
+    noms_sommets = set()
+    for nom, sommet in sommets.items():
+        if sommet.etat == etat_1:
+            noms_sommets.add(nom);
+            
+    return noms_sommets;
