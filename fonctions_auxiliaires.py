@@ -130,3 +130,23 @@ def grouped_cliques_by_node(cliques, noms_sommets_1):
                 dico[nom_sommet].append(clique)
                 
     return dico;
+
+def edges_in_cliques(cliques_couvertures):
+    """ retourne les aretes de tous les cliques. """
+    aretes_cliques = list();
+    
+    boolean_subset = False;
+    for clique in cliques_couvertures:
+        if isinstance(clique, list) or \
+            isinstance(clique, set) or \
+            isinstance(clique, frozenset):
+            boolean_subset = True;
+            
+    if boolean_subset:
+        aretes_cliques = [frozenset(item) 
+                            for sublist in [list(it.combinations(clique,2)) 
+                                            for clique in cliques_couvertures] 
+                            for item in sublist]
+    else:
+        aretes_cliques = list(it.combinations(cliques_couvertures,2));
+    return aretes_cliques;
