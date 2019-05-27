@@ -231,12 +231,17 @@ def execute_algos(mat_GR,
                                     sommets=sommets_tmp,
                                     sommets_res=sommets_k_alpha_res)
             cliques_couvertures_cor, \
-            aretes_LG_k_alpha_cor,\
-            sommets_k_alpha_cor = \
+            aretes_LG_k_alpha_cor, \
+            sommets_k_alpha_cor, \
+            dico_sommets_corriges = \
                             algoCorrection.correction_algo(
                                 cliques_couverture=set(cliques_couvertures_1),
                                 aretes_LG_k_alpha=aretes_LG_k_alpha,
-                                sommets_LG=sommets_k_alpha_1
+                                sommets_LG=sommets_k_alpha_1,
+                                mode_correction=mode,
+                                critere_correction=critere,
+                                number_items_pi1_pi2=number_items_pi1_pi2,
+                                DBG=DBG
                                       )
             sommets_trouves_cor, sommets_absents_cor, \
             etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
