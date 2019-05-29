@@ -121,6 +121,7 @@ def grouped_cliques_by_node(cliques, noms_sommets_1):
     retourner un dictionnaire contenant les cliques par sommets
     """
     dico = dict(); 
+    dico = dict.fromkeys(noms_sommets_1,[]);
     for clique  in cliques:
         sommets_communs = clique.intersection(noms_sommets_1);
         for nom_sommet in sommets_communs:
