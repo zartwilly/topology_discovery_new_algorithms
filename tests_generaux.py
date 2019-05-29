@@ -9,10 +9,11 @@ import time;
 import random;
 import numpy as np;
 import pandas as pd;
+import itertools as it;
 import creation_graphe as creat_gr;
 import fonctions_auxiliaires as fct_aux;
 import algo_couverture as algo_couv;
-import algo_correction as algoCorrection;
+import algo_correction as algo_corr;
 
 import graph_discovery_simulation as gr_disco_simi;
 
@@ -489,7 +490,7 @@ def test_modify_state_sommets_mat_LG(graphes_GR_LG):
         cliques_couvertures_cor, \
         aretes_LG_k_alpha_cor,\
         sommets_k_alpha_cor = \
-                        algoCorrection.correction_algo(
+                        algo_corr.correction_algo(
                             cliques_couverture=set(cliqs_couverts),
                             aretes_LG_k_alpha=aretes_LG,
                             sommets_LG=sommets_k_alpha_1
@@ -547,7 +548,7 @@ def test_execute_algos(graphes_GR_LG) :
     
     return df, df_num_graph;
     pass    
-        
+   
 ###############################################################################
 #                test pour fonctions de correction --> debut
 ###############################################################################
@@ -576,6 +577,88 @@ def test_grouped_cliques_by_node(graphes_GR_LG):
             dico_df[num_graph][nom] = liste_cliques;
     
     return pd.DataFrame.from_dict(dico_df).T
+
+def test_update_sommets_LG(graphes_GR_LG):
+    """
+    faire un test pour verifier si les modifications d'un graphe sont 
+    repercutees dans sommets_LG.
+    on fera ainsi:
+        - on construit sommets_LG avec mat_LG
+        - on supprime/ajoute k aretes de mat_LG => on obtient mat_LG_k
+        - on applique update_sommets_LG => sommets_LG_new
+        - on verifie que le voisinage des sommets sommets_LG_new a change 
+            en comparaison a  sommets_LG.
+    """
+    dico_df = dict(); 
+    for graphe_GR_LG in graphes_GR_LG:
+        print("TEST is_state ET selected_node")
+        mat_LG = graphe_GR_LG[1];
+        prob = graphe_GR_LG[5];
+        k_erreur = graphe_GR_LG[6];
+        sommets_LG = creat_gr.sommets_mat_LG(mat_LG, etat=2);
+        aretes_LG = fct_aux.aretes(mat_GR=mat_LG, orientation=False, val_0_1=1)
+        
+        mat_LG_k_alpha, aretes_LG_k_alpha, aretes_modifiees = \
+                                            gr_disco_simi.add_remove_edges(
+                                                    mat_LG, 
+                                                    aretes_LG, 
+                                                    k_erreur, 
+                                                    prob)
+        sommets_k_alpha = creat_gr.sommets_mat_LG(mat_LG_k_alpha, etat=2)
+        cliques_couvertures_res, aretes_LG_k_alpha_res, sommets_k_alpha_res = \
+                                algo_couv.clique_covers(
+                                    mat_LG_k_alpha, 
+                                    aretes_LG_k_alpha, 
+                                    sommets_k_alpha, 
+                                    DBG)
+        if aretes_LG_k_alpha_res:
+            cliques_couvertures_res = cliques_couvertures_res.union(
+                                        aretes_LG_k_alpha_res)
+            
+        cliques_par_nom_sommets_k = fct_aux.grouped_cliques_by_node(
+                                    cliques_couvertures_res,
+                                    sommets_LG.keys())
+        sommets_new = algo_corr.update_sommets_LG(
+                        sommets_LG,
+                        cliques_couvertures_res,
+                        cliques_par_nom_sommets_k)
+        
+        res_supp, res_ajout = 'OK', 'OK';
+        for arete_modif in aretes_modifiees['aretes_supprimees']:
+            som_0, som_1 = list(arete_modif)[0], list(arete_modif)[1]
+            if som_0 in sommets_new[som_1].voisins or \
+                som_1 in sommets_new[som_0].voisins:
+                res_supp = "NOK";
+                
+        for arete_modif in aretes_modifiees['aretes_ajoutees']:
+            som_0, som_1 = list(arete_modif)[0], list(arete_modif)[1]
+            if som_0 in sommets_LG[som_1].voisins or \
+                som_1 in sommets_LG[som_0].voisins:
+                res_ajout = "NOK";
+#        ########33 esprit tordu
+#        res_supp, res_ajout = 'NOK', 'NOK';
+#        for arete_modif in aretes_modifiees['aretes_supprimees']:
+#            som_0, som_1 = list(arete_modif)[0], list(arete_modif)[1]
+#            if som_0 not in sommets_new[som_1].voisins and \
+#                som_1 not in sommets_new[som_0].voisins:
+#                res_supp = "OK_s"
+#        
+#        for arete_modif in aretes_modifiees['aretes_ajoutees']:
+#            som_0, som_1 = list(arete_modif)[0], list(arete_modif)[1]
+#            if som_0 not in sommets_LG[som_1].voisins and \
+#                som_1 not in sommets_LG[som_0].voisins:
+#                res_ajout = "OK_a";
+#        ########33
+        
+        num_graph = graphe_GR_LG[8]+"_p_"+str(prob);
+        dico_df[num_graph] = {
+                "nbre_sommets": len(mat_LG.columns),
+                "res_ajout": res_ajout,
+                "res_supp": res_supp
+                }
+        
+    return pd.DataFrame.from_dict(dico_df).T;
+     
 ###############################################################################
 #                test pour fonctions de correction --> fin
 ###############################################################################
@@ -781,6 +864,7 @@ if __name__ == '__main__':
         
     elif not bool_couverture and bool_correction:
         df_corr_grouped_cliqs = test_grouped_cliques_by_node(graphes_GR_LG)
+        df_corr_maj_sommets_LG = test_update_sommets_LG(graphes_GR_LG)
         pass
     elif bool_couverture and bool_correction:
         pass
