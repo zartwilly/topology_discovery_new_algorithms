@@ -236,7 +236,7 @@ def execute_algos(mat_GR,
             cliques_par_nom_sommets_k_alpha_cor, \
             dico_sommets_corriges = \
                             algoCorrection.correction_algo(
-                                cliques_couverture=set(cliques_couvertures_1),
+                                cliques_couvertures=set(cliques_couvertures_1),
                                 aretes_LG_k_alpha=aretes_LG_k_alpha,
                                 sommets_LG=sommets_k_alpha_1,
                                 mode_correction=mode,
