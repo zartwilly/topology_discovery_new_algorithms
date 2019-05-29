@@ -818,7 +818,7 @@ if __name__ == '__main__':
     k_erreurs = range(k_erreur_min, k_erreur_max, 1)
     modes_correction = ["aleatoire_sans_remise"]
     criteres_selection_compression = ["voisins_corriges"]
-    prob_min, prob_max = 0,1; step_prob = 1.0;                                                         # je veux supprimer des aretes uniquement 
+    prob_min, prob_max = 0,1; step_prob = 1.0;                                 # je veux supprimer des aretes uniquement 
     probs = np.arange(prob_min, prob_max+0.1, step_prob)
     nbre_graphes = range(1, nbre_graphe+1, 1)
     ALPHA = 2; NUM_ITEM_Pi1_Pi2 = 0.5; DBG = True;
@@ -865,6 +865,9 @@ if __name__ == '__main__':
     elif not bool_couverture and bool_correction:
         df_corr_grouped_cliqs = test_grouped_cliques_by_node(graphes_GR_LG)
         df_corr_maj_sommets_LG = test_update_sommets_LG(graphes_GR_LG)
+        
+        #test
+        df_exec_algo, df_exec_algo_num_graph = test_execute_algos(graphes_GR_LG)
         pass
     elif bool_couverture and bool_correction:
         pass
