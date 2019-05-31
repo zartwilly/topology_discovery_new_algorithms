@@ -161,3 +161,15 @@ def edges_in_cliques(cliques_couvertures):
     else:
         aretes_cliques = list(it.combinations(cliques_couvertures,2));
     return aretes_cliques;
+
+def selected_cliques_number(max_number, nbre_cliqs_poss_S):
+    """
+    fournir le nombre de cliques contractables possibles a selectionner.
+    """
+    nbre_a_selectionner = 0;
+    if nbre_cliqs_poss_S < max_number:
+        nbre_a_selectionner = nbre_cliqs_poss_S;
+    elif nbre_cliqs_poss_S > max_number:
+        nbre_a_selectionner = max_number;
+        
+    return nbre_a_selectionner;
