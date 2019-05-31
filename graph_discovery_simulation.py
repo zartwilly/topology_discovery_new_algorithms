@@ -207,8 +207,8 @@ def execute_algos(mat_GR,
                                     sommets_k_alpha, 
                                     DBG)
         sommets_trouves_couv=[]; sommets_absents_couv=set();
-        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
-                                        set(), set(), set(), set(), set();
+        etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv, cliqs_couv = \
+                                        set(), set(), set(), set(), set(), set();
         sommets_trouves_couv, sommets_absents_couv, \
         etat0_couv, etat1_couv, etat_1_couv, etat2_couv, etat3_couv = \
             analyse_resultat(cliques_couvertures,
@@ -217,8 +217,8 @@ def execute_algos(mat_GR,
             
         # algo de correction
         sommets_trouves_cor=[]; sommets_absents_cor=set();
-        etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor = \
-                                        set(), set(), set(), set(), set();
+        etat0_cor, etat1_cor, etat_1_cor, etat2_cor, etat3_cor, cliqs_cor = \
+                                        set(), set(), set(), set(), set(), set();
         aretes_LG_k_alpha_cor = []
         if fct_aux.is_exists_sommet(sommets=sommets_k_alpha, etat_1=-1):
             aretes_LG_k_alpha_cor = aretes_LG_k_alpha_res.copy();
@@ -266,7 +266,8 @@ def execute_algos(mat_GR,
                 len(sommets_trouves_cor),len(sommets_absents_cor),
                 len(etat0_cor),len(etat1_cor),len(etat_1_cor),
                 len(etat2_cor),len(etat3_cor),
-                          dc_alpha, dh_alpha
+                len(cliqs_couv),len(cliqs_cor),
+                          dc_alpha, dh_alpha,
                           )
         results_k_alpha.append(result_k_alpha);
         
