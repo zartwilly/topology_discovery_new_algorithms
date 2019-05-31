@@ -9,6 +9,7 @@ Created on Fri May 17 16:05:31 2019
 import math;
 import time;
 import logging;
+import random;
 
 import numpy as np;
 import pandas as pd;
@@ -17,8 +18,16 @@ import itertools as it;
 import fonctions_auxiliaires as fct_aux;
 import defs_classes as def_class;
 
-logger = logging.getLogger('algorithme_correction');
+MAX_NUMBER = 1000000;
 
+log_file = "debug_algo_correction.log"
+logger = logging.getLogger('algorithme_correction');
+logging.basicConfig(format='%(asctime)s - %(message)s', 
+                        level=logging.DEBUG,
+                        datefmt='%d-%b-%y %H:%M:%S',
+                        filename=log_file,
+#                        filemode="w")
+                        filemode="w")
 ###############################################################################
 #               mise a jour des sommets de type Noeud => debut
 ###############################################################################
@@ -118,7 +127,7 @@ def mise_a_jour_aretes_cliques(nom_sommet_z,
     # identification des sommets corriges et des sommets non corriges dans noms_sommets_1,
     dico_sommets_corriges, dico_sommets_non_corriges = dict(), dict(); 
     for id_sommet_1, nom_sommet_1 in enumerate(noms_sommets_1):
-        cliques_sommet_1 = cliques_par_nom_sommets_new[nom_sommet_1];
+        cliques_sommet_1 = list(cliques_par_nom_sommets_new[nom_sommet_1]);
         
         if len(cliques_sommet_1) == 0:
             dico_sommets_non_corriges[id_sommet_1] = nom_sommet_1;
@@ -181,14 +190,14 @@ def clique_voisine_sommet_z(sommet_z,
         - c = C - C(z)
         - au moins deux cliques c1, c2 tel que |c \cap c1| = 0 et |c \cap c2|= 0
     """
-    cliques_voisines = list();
+    cliques_voisines = set(); #list();
     for c in set(C) - set(cliques_sommet_z) :
         cpt = 0;
         for cliq in cliques_sommet_z :
             if len(c.intersection(cliq)) == 1 :
                 cpt += 1;
         if cpt >= 2:
-            cliques_voisines.append(c)
+            cliques_voisines.add(c); #cliques_voisines.append(c)
     return cliques_voisines;
 
 def is_contractable(clique_contractable_possible,
@@ -247,9 +256,17 @@ def cliques_contractables(nom_sommet_z,
                                                         i)
                                         ]
     
-    print("##cliq_contract :nom_sommet_z ={}, cliques_contractables_possibles_S={}".format(
-          nom_sommet_z,len(cliques_contractables_possibles_S)))
+    print("##cliq_contract :nom_sommet_z={}, ".format(nom_sommet_z) \
+          +"cliques_sommet_z={} ".format(len(cliques_sommet_z)) \
+          +"list_cliques_sommet_z={} ".format(cliques_sommet_z) \
+          +"cliques_voisines_z={} ".format(len(cliques_voisines_z)) \
+          +"ensembles_N_z_C_z={} ".format(len(ensembles_N_z_C_z)) \
+          +"cliques_contractables_possibles_S={} ".format(len(cliques_contractables_possibles_S)) )
+          
     
+    #TODO : si cliques_contractables_possibles_S> n=1000 alors 
+    # retenir les n premieres cliques contractables. 
+    # ne pas oublier de melanger cliques_contractables_possibles_S
     for clique_contractable_possible in cliques_contractables_possibles_S :
         bool_contractable = True;
         bool_contractable = is_contractable(clique_contractable_possible,
@@ -310,7 +327,8 @@ def compression_sommet(id_sommet_1,
     # determination de C1 = (C_1,C_2) avec C_1, C_2 contratables
     dico_C1_C2_S1 = dict(); cpt = 0;
     
-    cliques_sommet_1 = cliques_par_nom_sommets[nom_sommet_1];
+#    cliques_sommet_1 = cliques_par_nom_sommets[nom_sommet_1];
+    cliques_sommet_1 = set(cliques_par_nom_sommets[nom_sommet_1]);
     cliques_voisines_sommet_1 = clique_voisine_sommet_z(
                                     sommet_z = nom_sommet_1,
                                     C = cliques_couvertures,
@@ -324,6 +342,8 @@ def compression_sommet(id_sommet_1,
                                 cliques_voisines_z = cliques_voisines_sommet_1,
                                 C = cliques_couvertures,
                                 DBG = DBG)
+
+    random.shuffle(cliques_contractables_s)
     
     logger.debug(
         "****** compres =>" \
@@ -332,7 +352,7 @@ def compression_sommet(id_sommet_1,
         +" cliques_voisines_sommet_1 = {}".format(len(cliques_voisines_sommet_1))
         ) if DBG else None;
     
-    for clique_C1_C2_Cx in cliques_contractables_s:
+    for clique_C1_C2_Cx in cliques_contractables_s[:MAX_NUMBER]:
         # construction de dico_C1_C2_S1
         #        dico_C1_C2_S1[(cpt, (C1,C2,...), (C3,C4,...))] = {
         #          "cliques_contratables_1":(C1, C2),
@@ -359,9 +379,11 @@ def compression_sommet(id_sommet_1,
                  +" dico_C1_C2_S1={}".format(len(dico_C1_C2_S1))
                 ) if DBG else None;      
           
-    for clique_p1_p2 in it.combinations(cliques_contractables_s, 2):
+    for clique_p1_p2 in it.combinations(cliques_contractables_s[:MAX_NUMBER], 2):
         clique_p1 = frozenset.union(*clique_p1_p2[0]);
         clique_p2 = frozenset.union(*clique_p1_p2[1]);
+        if cpt > MAX_NUMBER:
+            break;
         if len(clique_p1.intersection(clique_p2)) == 1 and \
             clique_p1.intersection(clique_p2) == frozenset({nom_sommet_1}):
             cpt += 1;
@@ -377,6 +399,10 @@ def compression_sommet(id_sommet_1,
                                                     frozenset({nom_sommet_1})
                                                                 )
                             }
+    print("****** compres => Avant " \
+                 +" nom_sommet_z={}".format(nom_sommet_1) \
+                 +" dico_C1_C2_S1={}".format(len(dico_C1_C2_S1))
+                ) if DBG else None;  
     logger.debug("****** compres => Avant " \
                  +" nom_sommet_z={}".format(nom_sommet_1) \
                  +" dico_C1_C2_S1={}".format(len(dico_C1_C2_S1))
@@ -886,6 +912,11 @@ def correction_sans_remise(noms_sommets_1,
     critere_correction: comment selectionner les couples (pi1, pi2, pis) de compression
 
     """
+    
+    logger.debug("***** corr_sans_remise => noms_sommets_1={}".format(noms_sommets_1))
+    print("***** corr_sans_remise => noms_sommets_1={}".format(noms_sommets_1))\
+    if DBG else None;
+    
     dico_sommets_corriges = dict();
     cpt_sommet = 0;
     
@@ -1010,6 +1041,7 @@ def correction_algo(cliques_couvertures,
                         cliques=cliques_couverture_cor,
                         noms_sommets_1=set(sommets_LG.keys()))
     
+    
     sommets_LG_cor = sommets_LG.copy()
     dico_sommets_corriges = dict();
     if mode_correction == "aleatoire_sans_remise" and \
@@ -1051,12 +1083,57 @@ def correction_algo(cliques_couvertures,
 if __name__ == '__main__':
     start = time.time();
     
-    gr_file = "debug_corr/mat_GR_G_4_4_p00.csv"
-    lg_file = "debug_corr/matE_G_4_4_p00.csv"
+    gr_file = "debug_corr/mat_GR_G_4_4_p10.csv"
+    lg_file = "debug_corr/matE_G_4_4_p10.csv"
     mat_GR = pd.read_csv(gr_file)
     mat_LG = pd.read_csv(lg_file, index_col=0)
     ALPHA = 1; NUM_ITEM_Pi1_Pi2 = 0.5; 
     mode_correction = "aleatoire_sans_remise"
     critere_correction = "voisins_corriges"
+    k_erreur = 4;
+    prob = 1.0;
     
+    bool_debug = True;
+    if bool_debug:
+        import creation_graphe as creat_gr;
+        import algo_couverture as algoCouverture;
+        
+        DBG = True
+
+        lg_k_file = "tests/voisins_corriges_sommets_GR_6/aleatoire_sans_remise/"\
+                    +"data_p_1.0/G_4_4/matrices/matE_k_"+str(ALPHA)+".csv"
+        mat_LG_k_alpha = pd.read_csv(lg_k_file, index_col=0)
+        aretes_LG_k_alpha = fct_aux.aretes(mat_GR=mat_LG_k_alpha)
+        
+        sommets_k_alpha = creat_gr.sommets_mat_LG(mat_LG_k_alpha);
+        cliques_couvertures, aretes_LG_k_alpha_res, sommets_k_alpha_res = \
+                                algoCouverture.clique_covers(
+                                    mat_LG_k_alpha, 
+                                    aretes_LG_k_alpha, 
+                                    sommets_k_alpha, 
+                                    DBG)
+        if fct_aux.is_exists_sommet(sommets=sommets_k_alpha, etat_1=-1):
+            aretes_LG_k_alpha_cor = aretes_LG_k_alpha_res.copy();
+            cliques_couvertures_1 = list(cliques_couvertures.copy());
+            aretes_res_non_effacees = list(map(frozenset, 
+                                               aretes_LG_k_alpha_res));
+            cliques_couvertures_1.extend(aretes_res_non_effacees);
+            sommets_tmp = creat_gr.sommets_mat_LG(mat_LG_k_alpha)
+            sommets_k_alpha_1 = fct_aux.modify_state_sommets_mat_LG(
+                                    sommets=sommets_tmp,
+                                    sommets_res=sommets_k_alpha_res)
+            cliques_couvertures_cor, \
+            aretes_LG_k_alpha_cor, \
+            sommets_k_alpha_cor, \
+            cliques_par_nom_sommets_k_alpha_cor, \
+            dico_sommets_corriges = \
+                            correction_algo(
+                                cliques_couvertures=set(cliques_couvertures_1),
+                                aretes_LG_k_alpha=aretes_LG_k_alpha,
+                                sommets_LG=sommets_k_alpha_1,
+                                mode_correction=mode_correction,
+                                critere_correction=critere_correction,
+                                number_items_pi1_pi2=NUM_ITEM_Pi1_Pi2,
+                                DBG=DBG
+                                      )
     
