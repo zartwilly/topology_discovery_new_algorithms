@@ -120,16 +120,26 @@ def grouped_cliques_by_node(cliques, noms_sommets_1):
     """
     retourner un dictionnaire contenant les cliques par sommets
     """
-    dico = dict(); 
-    dico = dict.fromkeys(noms_sommets_1,[]);
+#    dico = dict(); 
+#    dico = dict.fromkeys(noms_sommets_1,set()); #dico = dict.fromkeys(noms_sommets_1,[]);
+#    for clique  in cliques:
+#        sommets_communs = clique.intersection(noms_sommets_1);
+#        for nom_sommet in sommets_communs:
+#            if nom_sommet not in dico:
+#                dico[nom_sommet] = {clique} #dico[nom_sommet] = [clique]
+#            else:
+#                dico[nom_sommet].add(clique) #dico[nom_sommet].append(clique)
+    ####
+    dico = dict();
+    for nom_sommet in noms_sommets_1:
+        dico[nom_sommet] = set();
     for clique  in cliques:
         sommets_communs = clique.intersection(noms_sommets_1);
+#        print("clique={}, sommets_communs={}".format(clique,sommets_communs))
         for nom_sommet in sommets_communs:
-            if nom_sommet not in dico:
-                dico[nom_sommet] = [clique]
-            else:
-                dico[nom_sommet].append(clique)
-                
+            dico[nom_sommet].add(clique)
+    return dico;
+    ####
     return dico;
 
 def edges_in_cliques(cliques_couvertures):
