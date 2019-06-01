@@ -19,6 +19,7 @@ import fonctions_auxiliaires as fct_aux;
 import defs_classes as def_class;
 
 MAX_NUMBER = 1000000;
+MAX_NUM_CLIQ_CONTRACT_POSS = 25000;
 
 log_file = "debug_algo_correction.log"
 logger = logging.getLogger('algorithme_correction');
@@ -241,7 +242,7 @@ def cliques_contractables(nom_sommet_z,
                           cliques_sommet_z,
                           cliques_voisines_z,
                           C,
-                          DBG) :
+                          DBG):
     """ retourne la liste des cliques contractables autour du sommet_z. 
     """
     
@@ -255,28 +256,33 @@ def cliques_contractables(nom_sommet_z,
                                                         ensembles_N_z_C_z,
                                                         i)
                                         ]
-    
-    print("##cliq_contract :nom_sommet_z={}, ".format(nom_sommet_z) \
-          +"cliques_sommet_z={} ".format(len(cliques_sommet_z)) \
-          +"list_cliques_sommet_z={} ".format(cliques_sommet_z) \
-          +"cliques_voisines_z={} ".format(len(cliques_voisines_z)) \
-          +"ensembles_N_z_C_z={} ".format(len(ensembles_N_z_C_z)) \
-          +"cliques_contractables_possibles_S={} ".format(len(cliques_contractables_possibles_S)) )
           
+    nbre_cliques_a_selection = 0;
+    nbre_cliques_a_selection = fct_aux.selected_cliques_number(
+                                max_number=MAX_NUM_CLIQ_CONTRACT_POSS,
+                                nbre_cliqs_poss_S=len(cliques_contractables_possibles_S))
     
-    #TODO : si cliques_contractables_possibles_S> n=1000 alors 
-    # retenir les n premieres cliques contractables. 
-    # ne pas oublier de melanger cliques_contractables_possibles_S
-    for clique_contractable_possible in cliques_contractables_possibles_S :
+    random.shuffle(cliques_contractables_possibles_S)
+    for clique_contractable_possible in \
+                cliques_contractables_possibles_S[:nbre_cliques_a_selection]:
         bool_contractable = True;
         bool_contractable = is_contractable(clique_contractable_possible,
                                             aretes_cliques,
                                             aretes_LG_k_alpha,
                                             C)
-        if bool_contractable :
+        if bool_contractable:
             cliques_contractables.append(clique_contractable_possible)
+            
+    print("##cliq_contract :nom_sommet_z={}, ".format(nom_sommet_z) \
+          +"cliques_sommet_z={} ".format(len(cliques_sommet_z)) \
+          +"list_cliques_sommet_z={} ".format(cliques_sommet_z) \
+          +"cliques_voisines_z={} ".format(len(cliques_voisines_z)) \
+          +"ensembles_N_z_C_z={} ".format(len(ensembles_N_z_C_z)) \
+          +"cliques_contractables_possibles_S={} ".format(len(cliques_contractables_possibles_S)) \
+          +"nbre_cliques_a_selection={} ".format(nbre_cliques_a_selection) \
+          +"cliques_contractables={}".format(len(cliques_contractables)) )
     
-    if DBG and len(cliques_contractables) == 0 :
+    if DBG and len(cliques_contractables) == 0:
         logger.debug("****** contract => cliques_contractables_possibles_S={}".format(
                      cliques_contractables_possibles_S))
         logger.debug("****** contract => aretes_cliques={}".format(aretes_cliques))
@@ -905,7 +911,8 @@ def correction_sans_remise(noms_sommets_1,
                             number_items_pi1_pi2,
                             DBG):
     """
-    realise la correction sans remise.
+    realise la correction sans remise avec selection de sommets selon 
+    le critere choisi (C1, C2, C1_C2).
     
     noms_sommets_1 : noms des sommets a corriger cad sommets ayant etat = -1
     mode_correction : comment les sommets sont choisis
@@ -1014,6 +1021,230 @@ def correction_sans_remise(noms_sommets_1,
 ###############################################################################
 
 ###############################################################################
+#    correction des sommets sans remise avec selection aleatoire de sommets
+#                           => debut
+###############################################################################
+def correction_aleatoire_sans_remise_old_for(
+                                noms_sommets_1,
+                                cliques_par_nom_sommets,
+                                cliques_couvertures_cor,
+                                aretes_LG_k_alpha_cor,
+                                sommets_LG,
+                                mode_correction,
+                                critere_correction,
+                                number_items_pi1_pi2,
+                                DBG):
+    """
+    realise la correction sans remise avec selection aleatoire de sommets.
+    
+    noms_sommets_1 : noms des sommets a corriger cad sommets ayant etat = -1
+    mode_correction : comment les sommets sont choisis
+    critere_correction: comment selectionner les couples (pi1, pi2, pis) de compression
+    """
+    logger.debug("***** corr_sans_remise_avec_selection_aleatoire_sommets => " \
+                 +"noms_sommets_1={}".format(noms_sommets_1))
+    print("***** corr_sans_remise => noms_sommets_1={}".format(noms_sommets_1))\
+    if DBG else None;
+    
+    dico_sommets_corriges = dict();
+    cpt_sommet = 0;
+    
+    for id_sommet_1, nom_sommet_1 in enumerate(noms_sommets_1):
+        dico_compressions = dict();
+        dico_compressions = compression_sommet(id_sommet_1,
+                                           nom_sommet_1,
+                                           noms_sommets_1,
+#                                          cliques_sommet_1,
+                                           cliques_par_nom_sommets,
+                                           cliques_couvertures_cor,
+                                           aretes_LG_k_alpha_cor,
+                                           sommets_LG,
+                                           mode_correction,
+                                           critere_correction,
+                                           number_items_pi1_pi2,
+                                           DBG);
+        
+        dico_sol_p1_p2_ps, dico_compression = dict(), dict(); 
+        min_c1 = 0; max_c2 = 0;
+        min_c1, max_c2, dico_compression = critere_C2_C1_local(
+                                            dico_compressions,
+                                            mode_correction,
+                                            critere_correction, 
+                                            DBG)
+#        print("\n\n\n dico_compression={}".format(dico_compression))
+        print("\n\n len(dico_compression)={}".format(len(dico_compression)))
+        nbre_alea = random.randint(
+                        0,
+                        len(dico_compression)-1)
+        dico_sol_p1_p2_ps = dico_compression[nbre_alea]
+        
+        if not dico_sol_p1_p2_ps:
+            cout_T = {"aretes_ajoutees_p1": frozenset(),
+                      "aretes_ajoutees_p2": frozenset(),
+                      "aretes_supprimees": frozenset(),
+                      "min_c1": min_c1,
+                      "max_c2": max_c2};
+            cpt_sommet += 1;
+            dico_sommets_corriges[("0_0", "0_0")] = {
+                        "compression_p1": frozenset(),
+                        "compression_p2": frozenset(),
+                        "compression_ps": frozenset(),
+                        "sommets_corriges": dict(), # voisins_corriges = {"id_voisin_ds_sommets_a_corriger":voisin}
+                        "cout_T": cout_T
+                        }
+            noms_sommets_1 = list();
+        else:
+            cliques_couv_new, \
+            aretes_LG_k_alpha_cor_new, \
+            sommets_LG_new, \
+            cliques_par_nom_sommets_new, \
+            noms_sommets_1 = appliquer_correction(
+                                            dico_sol_p1_p2_ps,
+                                            noms_sommets_1,
+                                            sommets_LG);
+            
+            # mise a jour variables
+            cliques_par_nom_sommets = cliques_par_nom_sommets_new.copy()
+            cliques_couvertures_cor = cliques_couv_new.copy()
+            aretes_LG_k_alpha_cor = aretes_LG_k_alpha_cor_new.copy();
+            sommets_LG = sommets_LG_new.copy();
+            cout_T = {
+                "aretes_ajoutees_p1":dico_sol_p1_p2_ps["aretes_ajoutees_p1"],
+                "aretes_ajoutees_p2":dico_sol_p1_p2_ps["aretes_ajoutees_p2"],
+                "aretes_supprimees":dico_sol_p1_p2_ps["aretes_supprimees_ps"],
+                "min_c1":min_c1, "max_c2":max_c2};
+            cpt_sommet += 1;
+            dico_sommets_corriges[(cpt_sommet, 
+                                   dico_sol_p1_p2_ps["nom_sommet_1"])] = {
+                        "compression_p1":dico_sol_p1_p2_ps["p1"],
+                        "compression_p2":dico_sol_p1_p2_ps["p2"],
+                        "compression_ps":dico_sol_p1_p2_ps["ps"],
+                        "sommets_corriges":dico_sol_p1_p2_ps["sommets_corriges"], # voisins_corriges = {"id_voisin_ds_sommets_a_corriger":voisin}
+                        "cout_T": cout_T
+                        }
+    
+    return cliques_couvertures_cor, \
+            aretes_LG_k_alpha_cor, \
+            sommets_LG, \
+            cliques_par_nom_sommets, \
+            dico_sommets_corriges;
+    pass
+
+def correction_aleatoire_sans_remise(
+                                noms_sommets_1,
+                                cliques_par_nom_sommets,
+                                cliques_couvertures_cor,
+                                aretes_LG_k_alpha_cor,
+                                sommets_LG,
+                                mode_correction,
+                                critere_correction,
+                                number_items_pi1_pi2,
+                                DBG):
+    """
+    realise la correction sans remise avec selection aleatoire de sommets.
+    
+    noms_sommets_1 : noms des sommets a corriger cad sommets ayant etat = -1
+    mode_correction : comment les sommets sont choisis
+    critere_correction: comment selectionner les couples (pi1, pi2, pis) de compression
+    """
+    logger.debug("***** corr_sans_remise_avec_selection_aleatoire_sommets => " \
+                 +"noms_sommets_1={}".format(noms_sommets_1))
+    print("***** corr_sans_remise => noms_sommets_1={}".format(noms_sommets_1))\
+    if DBG else None;
+    
+    dico_sommets_corriges = dict();
+    cpt_sommet = 0;
+    
+#    for id_sommet_1, nom_sommet_1 in enumerate(noms_sommets_1):
+    while len(noms_sommets_1) != 0:
+        id_sommet_1  = cpt_sommet;  # probleme ICI
+        nom_sommet_1 = noms_sommets_1.pop();
+        
+        dico_compressions = dict();
+        dico_compressions = compression_sommet(id_sommet_1,
+                                           nom_sommet_1,
+                                           noms_sommets_1,
+#                                          cliques_sommet_1,
+                                           cliques_par_nom_sommets,
+                                           cliques_couvertures_cor,
+                                           aretes_LG_k_alpha_cor,
+                                           sommets_LG,
+                                           mode_correction,
+                                           critere_correction,
+                                           number_items_pi1_pi2,
+                                           DBG);
+        
+        dico_sol_p1_p2_ps, dico_compression = dict(), dict(); 
+        min_c1 = 0; max_c2 = 0;
+        min_c1, max_c2, dico_compression = critere_C2_C1_local(
+                                            dico_compressions,
+                                            mode_correction,
+                                            critere_correction, 
+                                            DBG)
+#        print("\n\n\n dico_compression={}".format(dico_compression))
+        print("\n\n len(dico_compression)={}".format(len(dico_compression)))
+        nbre_alea = random.randint(
+                        0,
+                        len(dico_compression)-1)
+        dico_sol_p1_p2_ps = dico_compression[nbre_alea]
+        
+        if not dico_sol_p1_p2_ps:
+            cout_T = {"aretes_ajoutees_p1": frozenset(),
+                      "aretes_ajoutees_p2": frozenset(),
+                      "aretes_supprimees": frozenset(),
+                      "min_c1": min_c1,
+                      "max_c2": max_c2};
+            cpt_sommet += 1;
+            dico_sommets_corriges[("0_0", "0_0")] = {
+                        "compression_p1": frozenset(),
+                        "compression_p2": frozenset(),
+                        "compression_ps": frozenset(),
+                        "sommets_corriges": dict(), # voisins_corriges = {"id_voisin_ds_sommets_a_corriger":voisin}
+                        "cout_T": cout_T
+                        }
+            noms_sommets_1 = list();
+        else:
+            cliques_couv_new, \
+            aretes_LG_k_alpha_cor_new, \
+            sommets_LG_new, \
+            cliques_par_nom_sommets_new, \
+            noms_sommets_1 = appliquer_correction(
+                                            dico_sol_p1_p2_ps,
+                                            noms_sommets_1,
+                                            sommets_LG);
+            
+            # mise a jour variables
+            cliques_par_nom_sommets = cliques_par_nom_sommets_new.copy()
+            cliques_couvertures_cor = cliques_couv_new.copy()
+            aretes_LG_k_alpha_cor = aretes_LG_k_alpha_cor_new.copy();
+            sommets_LG = sommets_LG_new.copy();
+            cout_T = {
+                "aretes_ajoutees_p1":dico_sol_p1_p2_ps["aretes_ajoutees_p1"],
+                "aretes_ajoutees_p2":dico_sol_p1_p2_ps["aretes_ajoutees_p2"],
+                "aretes_supprimees":dico_sol_p1_p2_ps["aretes_supprimees_ps"],
+                "min_c1":min_c1, "max_c2":max_c2};
+            cpt_sommet += 1;
+            dico_sommets_corriges[(cpt_sommet, 
+                                   dico_sol_p1_p2_ps["nom_sommet_1"])] = {
+                        "compression_p1":dico_sol_p1_p2_ps["p1"],
+                        "compression_p2":dico_sol_p1_p2_ps["p2"],
+                        "compression_ps":dico_sol_p1_p2_ps["ps"],
+                        "sommets_corriges":dico_sol_p1_p2_ps["sommets_corriges"], # voisins_corriges = {"id_voisin_ds_sommets_a_corriger":voisin}
+                        "cout_T": cout_T
+                        }
+    
+    return cliques_couvertures_cor, \
+            aretes_LG_k_alpha_cor, \
+            sommets_LG, \
+            cliques_par_nom_sommets, \
+            dico_sommets_corriges;
+    pass
+###############################################################################
+#   correction des sommets sans remise avec selection aleatoire de sommets
+#                           => fin
+###############################################################################
+    
+###############################################################################
 #               algorithme de correction => debut
 ###############################################################################
 def correction_algo(cliques_couvertures,
@@ -1032,7 +1263,9 @@ def correction_algo(cliques_couvertures,
     critere_correction: comment selectionner les couples (pi1, pi2, pis) de compression
     """
     
-    #TODO a tester
+    #TODO 
+    #   tester : aleatoire_sans_remise, voisins_corriges => OK
+    # a tester : aleatoire_sans_remise, nombre_aretes_corriges =>
     cliques_couverture_cor = cliques_couvertures.copy()
     aretes_LG_k_alpha_cor = aretes_LG_k_alpha.copy()
     
@@ -1051,6 +1284,23 @@ def correction_algo(cliques_couvertures,
             sommets_LG_cor, \
             cliques_par_nom_sommets, \
             dico_sommets_corriges = correction_sans_remise(
+                                            list(noms_sommets_1),
+                                            cliques_par_nom_sommets,
+                                            cliques_couverture_cor,
+                                            aretes_LG_k_alpha_cor,
+                                            sommets_LG,
+                                            mode_correction,
+                                            critere_correction,
+                                            number_items_pi1_pi2,
+                                            DBG)
+            
+    elif mode_correction == "aleatoire_sans_remise" and \
+        critere_correction ==  "nombre_aretes_corrigees":
+            cliques_couverture_cor, \
+            aretes_LG_k_alpha_cor, \
+            sommets_LG_cor, \
+            cliques_par_nom_sommets, \
+            dico_sommets_corriges = correction_aleatoire_sans_remise(
                                             list(noms_sommets_1),
                                             cliques_par_nom_sommets,
                                             cliques_couverture_cor,
