@@ -19,7 +19,8 @@ import fonctions_auxiliaires as fct_aux;
 import defs_classes as def_class;
 
 MAX_NUMBER = 1000000;
-MAX_NUM_CLIQ_CONTRACT_POSS = 25000;
+MAX_NUM_CLIQ_CONTRACT_POSS = 1500#2500;
+MAX_ENSEMBLES_N_z_C_z = 16;
 
 log_file = "debug_algo_correction.log"
 logger = logging.getLogger('algorithme_correction');
@@ -250,13 +251,30 @@ def cliques_contractables(nom_sommet_z,
     cliques_contractables = [];
     
     ensembles_N_z_C_z = set(cliques_sommet_z).union(cliques_voisines_z);
-    cliques_contractables_possibles_S = [x for i in range(2, 
+    print("--ensembles_N_z_C_z={}".format(len(ensembles_N_z_C_z)))
+    cliques_contractables_possibles_S = []
+    if len(ensembles_N_z_C_z) < MAX_ENSEMBLES_N_z_C_z:
+        print("ici1")
+        cliques_contractables_possibles_S = [x for i in range(2, 
                                                     len(ensembles_N_z_C_z)+1) \
                                                 for x in it.combinations(
                                                         ensembles_N_z_C_z,
                                                         i)
-                                        ]
-          
+                                            ]
+    else:
+        print('ICI2')
+        ensembles_N_z_C_z = list(ensembles_N_z_C_z)
+        random.shuffle(ensembles_N_z_C_z)
+        cliques_contractables_possibles_S = [
+                                    x for i in range(2, 
+                                                MAX_ENSEMBLES_N_z_C_z) \
+                                         for x in it.combinations(
+                                                 ensembles_N_z_C_z[:MAX_ENSEMBLES_N_z_C_z],
+                                                 i)
+                                            ]
+    print("-- cliques_contractables_possibles_S={}".format(len(cliques_contractables_possibles_S)))
+
+     
     nbre_cliques_a_selection = 0;
     nbre_cliques_a_selection = fct_aux.selected_cliques_number(
                                 max_number=MAX_NUM_CLIQ_CONTRACT_POSS,
