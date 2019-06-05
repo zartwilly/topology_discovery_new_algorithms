@@ -292,14 +292,16 @@ def execute_algos(mat_GR,
              "distribution_moyDistLine_moyHamming_k_" + \
              str(k_erreur) + \
              ".txt","a")
-    f.write(str(num_graph_G_k) + ";" +\
-            str(k_erreur) + ";" + \
-            str( round(moy_dc,2) ) + ";" + \
-            str( round(moy_dh,2) ) + ";" + \
+    f.write(str(num_graph_G_k) + ";" \
+            + str(k_erreur) + ";"  \
+            + str( round(moy_dc,2) ) + ";" \
+            + str( round(moy_dh,2) ) + ";" \
 #            str( len() ) + ";" + \
-            str(nbre_sommets_LG) + ";" + \
-            str(len(aretes_LG)) + ";" + \
-            str(correl_dc_dh) + "\n"
+            + str(nbre_sommets_LG) + ";" \
+            + str(len(aretes_LG)) + ";" \
+            + str(correl_dc_dh) + ";" \
+            + str( time.time()-start_G_k ) \
+            + "\n"
             )
     
     print("results_k_alpha={}".format(len(results_k_alpha)))
