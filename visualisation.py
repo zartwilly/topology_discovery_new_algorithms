@@ -27,6 +27,8 @@ from bokeh.models.tools import HoverTool
 from bokeh.models.tickers import FixedTicker
 from bokeh.models import FuncTickFormatter
 
+BOOL_ANGLAIS = True;
+
 NBRE_ROWS = 3;
 NBRE_COLS = 2;
 NBRE_SOMMETS_1 = 2;
@@ -40,6 +42,62 @@ DATA_P_REP = "data_p_";
 NAMES_HEADERS_DISTRIB = ("G_k", "k_erreur","moy_dc","moy_dh","nbre_sommets_LG",\
                          "nbre_aretes_LG","correl_dc_dh")
 
+###############################################################################
+#               fonctions annexes => debut
+###############################################################################
+def title_xlabel_ylabel_figure(dc_dh_correl, k_erreur, mu, sigma):
+    """
+    retourner le titre, le label de l axe x et celui de l axe y.
+    """
+    title, xlabel, ylabel = "", "", "";
+    if BOOL_ANGLAIS:
+        if dc_dh_correl == "moy_dc":
+            title = "DC for k={} added/deleted edges".format(k_erreur);
+            xlabel = "DC_\{G,k\}";
+            ylabel = "graph_number";
+        elif dc_dh_correl == "moy_dh":
+            title = "DH for k={} added/deleted edges".format(k_erreur);
+            xlabel = "DH_\{G,k\}";
+            ylabel = "graph_number";
+        elif dc_dh_correl == "correl":
+            title = "cumulative correlation between DC and DH \n"\
+                    +"for k={} added/deleted edges".format(k_erreur);
+            xlabel = "correlation_DC_DH_\{G,k\}";
+            ylabel = "cumulative correlation";
+        elif dc_dh_correl == "cumul_correl":
+            title = "cumulative correlation for \n"\
+                    +str(k_erreur)\
+                    +"  added/deleted edges";
+            xlabel = "correl_DC_DH";
+            ylabel = "nb_graphe_correl_DC_DH<x";
+        
+    else:
+        if dc_dh_correl == "moy_dc":
+            title = "DC pour k={} aretes ajoute(e)s/supprime(e)s".format(k_erreur);
+            xlabel = "DC_\{G,k\}";
+            ylabel = "nombre_graphe";
+        elif dc_dh_correl == "moy_dh":
+            title = "DH pour k={} aretes ajoute(e)s/supprime(e)s".format(k_erreur)
+            xlabel = "DH_\{G,k\}";
+            ylabel = "nombre_graphe";
+        elif dc_dh_correl == "correl":
+            title = "correltion cumulative entre DC et DH \n"\
+                    +"pour k={} arete(s) ajoute(e)s/supprime(e)s".format(k_erreur);
+            xlabel = "correlation_DC_DH_\{G,k\}";
+            ylabel = "correlation cumulative";
+        elif dc_dh_correl == "cumul_correl":
+            title = "correlation cumulative pour \n"\
+                    +str(k_erreur)\
+                    +" arete(s) ajoute(e)s/supprime(e)s";
+            xlabel = "correl_DC_DH";
+            ylabel = "nb_graphe_correl_DC_DH<x";
+        
+    return title, xlabel, ylabel;
+    pass
+###############################################################################
+#               fonctions annexes => fin
+###############################################################################
+    
 ###############################################################################
 #               distribution avec seaborn => debut
 ###############################################################################
@@ -160,13 +218,12 @@ def distribution_seaborn(critere_correction,
         df_kerrs["moy_dc_"+str(k_erreur)].hist(bins = bins, ax = axarr[ind,0])
         mu = df_kerrs["moy_dc_"+str(k_erreur)].mean(); 
         sigma = df_kerrs["moy_dc_"+str(k_erreur)].std();
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("moy_dc", k_erreur,
+                                                           mu, sigma);
         axarr[ind,0].set(
-                xlabel= "moy_distance_correction", \
-                ylabel= "nombre_graphe", \
-                title = "distance de correction pour \n" \
-                    + str(k_erreur) \
-                    +" arete(s) modifiee(s) \n $\mu=%.3f,\ \sigma=%.3f\ $ " \
-                    %(mu, sigma)
+                xlabel= xlabel, \
+                ylabel= ylabel, \
+                title = title
                         );
         print("yticks={}, xticks={}, count={}".format(
                     axarr[ind,0].get_yticks(), 
@@ -186,13 +243,12 @@ def distribution_seaborn(critere_correction,
         df_kerrs["moy_dh_"+str(k_erreur)].hist(bins = bins, ax = axarr[ind,1]);
         mu = df_kerrs["moy_dh_"+str(k_erreur)].mean(); 
         sigma = df_kerrs["moy_dh_"+str(k_erreur)].std();
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("moy_dh", k_erreur,
+                                                           mu, sigma);
         axarr[ind,1].set(
-                xlabel= "moy_distance_hamming", \
-                ylabel= "nombre_graphe", \
-                title = "distance de Hamming pour \n"\
-                    + str(k_erreur) \
-                    + " arete(s) modifiee(s) \n $\mu=%.3f,\ \sigma=%.3f\ $." \
-                    %(mu, sigma)
+                xlabel= xlabel, \
+                ylabel= ylabel, \
+                title = title
                         );
         axarr[ind,1].axvline(x=k_erreur, color = 'r')
         axarr[ind,1].set_xticks(ticks=bins, minor=True);                       # axarr[ind,1].set_xticklabels(bins, rotation=0)
@@ -207,12 +263,12 @@ def distribution_seaborn(critere_correction,
         data_sort = df_kerrs["correl_dc_dh_"+str(k_erreur)]\
                     .sort_values(ascending = True);
         axarr[ind,2].step(data_sort, data_sort.cumsum())
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("correl", k_erreur,
+                                                           0, 0);
         axarr[ind,2].set(
-                xlabel= "correlation_DC_DH", 
-                ylabel= "cumulative correlation", \
-                title = "fonction de repartition de \n"\
-                        +"correlation entre moy_dl et moy_dh \n pour "\
-                        +str(k_erreur)+" cases modifiees."
+                xlabel= xlabel,
+                ylabel= ylabel,
+                title = title
                         );
         axarr[ind,2].set_yticklabels(
                 ['{:3.2f}%'.format(
@@ -221,27 +277,29 @@ def distribution_seaborn(critere_correction,
                                     );
         
         # ind=0, axarr = 3 --> cumul_dh
-        df_kerrs.sort_values(by = "moy_dh_"+str(k_erreur), 
+        df_kerrs.sort_values(by = "correl_dc_dh_"+str(k_erreur), 
                              ascending=True, 
                              axis = 0, 
                              inplace = True);
-        df_kerrs["nb_graphe_dh<x"] = \
-            df_kerrs["moy_dh_"+str(k_erreur)]\
+        df_kerrs["nb_graphe_correl_dc_dh<x"] = \
+            df_kerrs["correl_dc_dh_"+str(k_erreur)]\
             .apply( lambda x: \
-                   df_kerrs["moy_dh_"\
-                            +str(k_erreur)][df_kerrs["moy_dh_"\
+                   df_kerrs["correl_dc_dh_"\
+                            +str(k_erreur)][df_kerrs["correl_dc_dh_"\
                                             +str(k_erreur)] < x].count()/\
-                   df_kerrs["moy_dh_"\
+                   df_kerrs["correl_dc_dh_"\
                             +str(k_erreur)].count())
 #        print("--->k={}, cumul_dh => min = {}, max = {},".format(k_error, df["nb_graphe_dh<x"].min(), df["nb_graphe_dh<x"].max()))
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("cumul_correl", 
+                                                           k_erreur, 0, 0);
         axarr[ind,3].set(
-                xlabel= "moy_DH", 
-                ylabel= "number graph moy_DH < x ", \
-                title = "cumulative moy_dh pour \n"+str(k_erreur)+" cases modifiees");
-        axarr[ind,3].step(df_kerrs["moy_dh_"+str(k_erreur)],
-                          df_kerrs["nb_graphe_dh<x"]);
+                xlabel= xlabel, 
+                ylabel= ylabel, \
+                title = title);
+        axarr[ind,3].step(df_kerrs["correl_dc_dh_"+str(k_erreur)],
+                          df_kerrs["nb_graphe_correl_dc_dh<x"]);
         axarr[ind,3].set_xticklabels(np.arange(0, 
-                                               df_kerrs["moy_dh_"+str(k_erreur)].count(), 
+                                               df_kerrs["correl_dc_dh_"+str(k_erreur)].count(), 
                                                10), 
                                      rotation=45);   
         
@@ -304,11 +362,8 @@ def distribution_bokeh(critere_correction,
         ###### moy_dc
         mu = df_kerrs["moy_dc_"+str(k_erreur)].mean(); 
         sigma = df_kerrs["moy_dc_"+str(k_erreur)].std();
-        title = "distance de correction pour \n" \
-                + str(k_erreur) \
-                +" arete(s) modifiee(s) \n $\mu=%.3f,\ \sigma=%.3f\ $ " \
-                %(mu, sigma)
-               
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("moy_dc", k_erreur, 
+                                                           mu, sigma)
         arr_hist, edges = np.histogram(df_kerrs['moy_dc_'+str(k_erreur)],
                             bins=int(max(df_kerrs['moy_dc_'+str(k_erreur)]) / 2), 
                             range=[min(df_kerrs['moy_dc_'+str(k_erreur)]), 
@@ -321,8 +376,8 @@ def distribution_bokeh(critere_correction,
         # Create the blank plot
         p_dc = figure(plot_height = HEIGHT, plot_width = WIDTH, 
                       title = title,
-                      x_axis_label = 'moy_dc', 
-                      y_axis_label = 'nombre_graphe', 
+                      x_axis_label = xlabel, 
+                      y_axis_label = ylabel, 
                       tools = TOOLS
                     )
         # Add a quad glyph
@@ -358,11 +413,8 @@ def distribution_bokeh(critere_correction,
         ###### moy_dh
         mu = df_kerrs["moy_dh_"+str(k_erreur)].mean(); 
         sigma = df_kerrs["moy_dh_"+str(k_erreur)].std();
-        title = "distance de Hamming pour \n" \
-                + str(k_erreur) \
-                +" arete(s) modifiee(s) \n $\mu=%.3f,\ \sigma=%.3f\ $ " \
-                %(mu, sigma)
-               
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("moy_dh", k_erreur, 
+                                                           mu, sigma)       
         arr_hist, edges = np.histogram(df_kerrs['moy_dh_'+str(k_erreur)],
                             bins=int(max(df_kerrs['moy_dh_'+str(k_erreur)]) / 2), 
                             range=[min(df_kerrs['moy_dh_'+str(k_erreur)]), 
@@ -375,8 +427,8 @@ def distribution_bokeh(critere_correction,
         # Create the blank plot
         p_dh = figure(plot_height = HEIGHT, plot_width = WIDTH, 
                       title = title,
-                      x_axis_label = 'moy_dh', 
-                      y_axis_label = 'nombre_graphe', 
+                      x_axis_label = xlabel, 
+                      y_axis_label = ylabel, 
                       tools = TOOLS)
         # Add a quad glyph
         src = ColumnDataSource(df_dh_k)
@@ -406,10 +458,12 @@ def distribution_bokeh(critere_correction,
         title = "fonction de repartition de \n" \
                 +"correlation entre moy_dc et moy_dh \n pour " \
                 +str(k_erreur)+" cases modifiees."
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("correl", k_erreur, 
+                                                           0, 0)
         p_corr_k = figure(plot_height = HEIGHT, plot_width = WIDTH, 
                       title = title,
-                      x_axis_label = 'correlation_DC_DH', 
-                      y_axis_label = 'cumulative correlation', 
+                      x_axis_label = xlabel, 
+                      y_axis_label = ylabel, 
                       tools = TOOLS)
         p_corr_k.line(source=src, 
                       x='correl_dc_dh_'+str(k_erreur),
@@ -417,29 +471,31 @@ def distribution_bokeh(critere_correction,
         
         p_cols_k.append(p_corr_k)
         
-        #### cumul_dh
+        #### cumul_correl_dc_dh
         df_corr_k_sorted = df_corr_k.sort_values(
-                                by='moy_dh_'+str(k_erreur),
+                                by='correl_dc_dh_'+str(k_erreur),
                                 axis=0, ascending=True);
-        df_corr_k_sorted["nb_graphe_dh<x"] = \
+        df_corr_k_sorted["nb_graphe_correl<x"] = \
             df_corr_k_sorted["moy_dh_"+str(k_erreur)]\
             .apply( lambda x: \
-                   df_corr_k_sorted["moy_dh_"\
-                            +str(k_erreur)][df_corr_k_sorted["moy_dh_"\
+                   df_corr_k_sorted["correl_dc_dh_"\
+                            +str(k_erreur)][df_corr_k_sorted["correl_dc_dh_"\
                                             +str(k_erreur)] < x].count()/\
-                   df_corr_k_sorted["moy_dh_"\
+                   df_corr_k_sorted["correl_dc_dh_"\
                             +str(k_erreur)].count())
         
         src = ColumnDataSource(df_corr_k_sorted)
         title = "cumulative moy_dh pour \n"+str(k_erreur)+" cases modifiees";
+        title, xlabel, ylabel = title_xlabel_ylabel_figure("cumul_correl", 
+                                                           k_erreur, 0, 0)
         p_corr_sup_x_k = figure(plot_height = HEIGHT, plot_width = WIDTH, 
                       title = title,
-                      x_axis_label = 'number graph moy_DH < x', 
-                      y_axis_label = "cumulative moy_dh pour \n"+str(k_erreur)+" cases modifiees", 
+                      x_axis_label = xlabel, 
+                      y_axis_label = ylabel, 
                       tools = TOOLS)
         p_corr_sup_x_k.line(source=src, 
-                      x="moy_dh_"+str(k_erreur),
-                      y="nb_graphe_dh<x")
+                      x="correl_dc_dh_"+str(k_erreur),
+                      y="nb_graphe_correl<x")
         
         p_cols_k.append(p_corr_sup_x_k)
                 
