@@ -161,7 +161,7 @@ def plot_bkh_comparaison_p(df, p_s, k_erreurs, var_cols, rep):
                         line_width=2, line_dash="dashed");
                 p_k_dc_dh.legend.click_policy = "mute";
                 p_k_dc_dh.legend.location = "top_left";
-                p_k_dc_dh.legend.orientation="horizontal"
+#                p_k_dc_dh.legend.orientation="horizontal"
             p_k.append(p_k_dc_dh);
         
         frame_p.append(p_k);
